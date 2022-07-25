@@ -1,0 +1,17 @@
+app:
+  beam:
+    appId: app1
+    secret: foo
+    proxy:
+       id: proxy23
+       baseUrl: 'http://localhost:8082'
+  taskStore:
+    baseUrl: 'http://localhost:8083/fhir'
+  dataStore:
+    baseUrl: 'http://localhost:8084/fhir'
+spring:
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+    deserialization:
+      ADJUST_DATES_TO_CONTEXT_TIME_ZONE: false

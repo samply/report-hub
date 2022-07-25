@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title
+      data-th-text="|EXLIQUID Report – ${#temporals.format(report.date, 'dd.MM.yyyy')} – Report Hub|">
+    EXLIQUID Report – 23.07.2022 – Report Hub
+  </title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link data-th-href="'/css/bootstrap.min.css'"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="row">
+    <h1 data-th-text="|EXLIQUID  Report – ${#temporals.format(report.date, 'dd.MM.yyyy')}|">
+      EXLIQUID Report – 23.07.2022
+    </h1>
+
+    <table class="table table-striped">
+      <thead>
+      <tr>
+        <th scope="col">Diagnose</th>
+        <th scope="col">Anzahl Patienten</th>
+        <th scope="col">Anzahl Proben</th>
+        <th scope="col">Anzahl Plasma Proben</th>
+        <th scope="col">Anzahl PBMC Proben</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr data-th-each="stratum : ${report.strata}">
+        <td data-th-text="${stratum.diagnosis}">C25</td>
+        <td data-th-text="${stratum.patientCount}">42</td>
+        <td data-th-text="${stratum.plasmaCount} + ${stratum.pbmcCount}">44</td>
+        <td data-th-text="${stratum.plasmaCount}">23</td>
+        <td data-th-text="${stratum.pbmcCount}">21</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

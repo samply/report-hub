@@ -1,0 +1,23 @@
+{
+  "resourceType": "Library",
+  "id": "exliquid",
+  "name": "EXLIQUID",
+  "url": "https://dktk.dkfz.de/fhir/Library/exliquid",
+  "status": "active",
+  "type": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/library-type",
+        "code": "logic-library"
+      }
+    ]
+  },
+  "subjectCodeableConcept": {
+    "coding": [
+      {
+        "system": "http://hl7.org/fhir/resource-types",
+        "code": "Patient"
+      }
+    ]
+  }
+}

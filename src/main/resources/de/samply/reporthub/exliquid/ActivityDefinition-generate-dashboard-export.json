@@ -1,0 +1,6 @@
+{
+  "resourceType" : "ActivityDefinition",
+  "url" : "https://dktk.dkfz.de/fhir/ActivityDefinition/exliquid-generate-dashboard-report",
+  "title" : "Generate Dashboard Report",
+  "status" : "active"
+}

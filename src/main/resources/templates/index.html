@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Report Hub</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link data-th-href="'/css/bootstrap.min.css'" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="row">
+    <h1>Samply Report Hub</h1>
+  </div>
+  <div class="row">
+    <h2>Tasks</h2>
+    <table class="table table-striped">
+      <thead>
+      <tr>
+        <th scope="col">Letztes Update</th>
+        <th scope="col">Status</th>
+        <th scope="col">Activity Definition</th>
+        <th scope="col">Report</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr data-th-each="task : ${tasks}">
+        <td data-th-text="${#temporals.format(task.lastModified, 'dd.MM.yyyy HH:mm:ss')}">22.07.2022 16:42:23</td>
+        <td data-th-text="${task.status}">completed</td>
+        <td>
+          <a data-th-href="${task.activityDefinitionLink.href}"
+             data-th-text="${task.activityDefinitionLink.label}">Generate Dashboard Report</a>
+        </td>
+        <td>
+          <a data-th-if="${task.reportLink.isPresent}"
+             data-th-href="${task.reportLink.get().href}"
+             data-th-text="${task.reportLink.get().label}">Report</a>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
