@@ -47,7 +47,7 @@ public record OperationOutcome(Optional<String> id, List<Issue> issue) implement
       Code code,
       Optional<CodeableConcept> details,
       Optional<String> diagnostics,
-      List<String> expression) {
+      List<String> expression) implements BackboneElement {
 
     public Issue {
       Objects.requireNonNull(severity);

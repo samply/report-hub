@@ -112,7 +112,7 @@ public record MeasureReport(
   public record Group(
       Optional<CodeableConcept> code,
       List<Population> population,
-      List<Stratifier> stratifier) {
+      List<Stratifier> stratifier) implements BackboneElement {
 
     public Group {
       Objects.requireNonNull(code);
@@ -163,7 +163,9 @@ public record MeasureReport(
 
     @JsonInclude(Include.NON_EMPTY)
     @JsonDeserialize(builder = Population.Builder.class)
-    public record Population(Optional<CodeableConcept> code, Optional<Integer> count) {
+    public record Population(
+        Optional<CodeableConcept> code,
+        Optional<Integer> count) implements BackboneElement {
 
       public Population {
         Objects.requireNonNull(code);
@@ -197,7 +199,9 @@ public record MeasureReport(
 
     @JsonInclude(Include.NON_EMPTY)
     @JsonDeserialize(builder = Stratifier.Builder.class)
-    public record Stratifier(List<CodeableConcept> code, List<Stratum> stratum) {
+    public record Stratifier(
+        List<CodeableConcept> code,
+        List<Stratum> stratum) implements BackboneElement {
 
       public Stratifier {
         Objects.requireNonNull(code);
@@ -229,7 +233,7 @@ public record MeasureReport(
       public record Stratum(
           Optional<CodeableConcept> value,
           List<Component> component,
-          List<Population> population) {
+          List<Population> population) implements BackboneElement {
 
         public Stratum {
           Objects.requireNonNull(value);
@@ -275,7 +279,9 @@ public record MeasureReport(
           }
         }
 
-        public record Component(CodeableConcept code, CodeableConcept value) {
+        public record Component(
+            CodeableConcept code,
+            CodeableConcept value) implements BackboneElement {
 
           public Component {
             Objects.requireNonNull(code);
@@ -285,7 +291,9 @@ public record MeasureReport(
 
         @JsonInclude(Include.NON_EMPTY)
         @JsonDeserialize(builder = Population.Builder.class)
-        public record Population(Optional<CodeableConcept> code, Optional<Integer> count) {
+        public record Population(
+            Optional<CodeableConcept> code,
+            Optional<Integer> count) implements BackboneElement {
 
           public Population {
             Objects.requireNonNull(code);

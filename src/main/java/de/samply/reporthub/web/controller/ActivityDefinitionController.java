@@ -21,7 +21,7 @@ public class ActivityDefinitionController {
   }
 
   @GetMapping("activity-definition/{id}")
-  public String index(@PathVariable("id") String id, Model model) {
+  public String activityDefinition(@PathVariable("id") String id, Model model) {
     model.addAttribute("activityDefinition", taskStore.fetchActivityDefinition(id));
     return "activity-definition";
   }

@@ -13,6 +13,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.codec.ClientCodecConfigurer.ClientDefaultCodecs;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,6 +23,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class ReportHubApplication {
 
   private static final Logger logger = LoggerFactory.getLogger(ReportHubApplication.class);
+
+  private static final int TWO_MEGA_BYTE = 2 * 1024 * 1024;
 
   @Value("${app.beam.proxy.id}")
   private String beamProxyId;
@@ -45,21 +49,32 @@ public class ReportHubApplication {
   }
 
   @Bean
-  public WebClient taskStoreClient(@Value("${app.taskStore.baseUrl}") String baseUrl, ObjectMapper mapper) {
+  public WebClient taskStoreClient(@Value("${app.taskStore.baseUrl}") String baseUrl,
+      ObjectMapper mapper) {
     return WebClient.builder()
         .baseUrl(baseUrl)
         .defaultRequest(request -> request.accept(APPLICATION_JSON))
-        .codecs(configurer -> configurer.defaultCodecs()
-            .jackson2JsonEncoder(new Jackson2JsonEncoder(mapper)))
+        .codecs(configurer -> {
+          var codecs = configurer.defaultCodecs();
+          codecs.maxInMemorySize(TWO_MEGA_BYTE);
+          codecs.jackson2JsonEncoder(new Jackson2JsonEncoder(mapper));
+          codecs.jackson2JsonDecoder(new Jackson2JsonDecoder(mapper));
+        })
         .build();
   }
 
   @Bean
-  public WebClient dataStoreClient(@Value("${app.dataStore.baseUrl}") String baseUrl) {
-    logger.info("init data store web client");
+  public WebClient dataStoreClient(@Value("${app.dataStore.baseUrl}") String baseUrl,
+      ObjectMapper mapper) {
     return WebClient.builder()
         .baseUrl(baseUrl)
         .defaultRequest(request -> request.accept(APPLICATION_JSON))
+        .codecs(configurer -> {
+          var codecs = configurer.defaultCodecs();
+          codecs.maxInMemorySize(TWO_MEGA_BYTE);
+          codecs.jackson2JsonEncoder(new Jackson2JsonEncoder(mapper));
+          codecs.jackson2JsonDecoder(new Jackson2JsonDecoder(mapper));
+        })
         .build();
   }
 

@@ -39,7 +39,7 @@ public class BeamPoller {
       while (running) {
         proxy.retrieveTasks()
             .flatMap(BeamPoller::convert)
-            .flatMap(taskStore::createTask)
+            .flatMap(taskStore::createBeamTask)
             .collectList()
             .block();
       }

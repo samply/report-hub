@@ -143,7 +143,7 @@ public record Task(
 
   @JsonSerialize(using = Serializer.class)
   @JsonDeserialize(builder = Output.Builder.class)
-  public record Output(CodeableConcept type, Element value) {
+  public record Output(CodeableConcept type, Element value) implements BackboneElement {
 
     public Output {
       Objects.requireNonNull(type);

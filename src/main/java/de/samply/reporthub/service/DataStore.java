@@ -8,6 +8,7 @@ import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.Bundle;
 import de.samply.reporthub.model.fhir.Bundle.Entry;
 import de.samply.reporthub.model.fhir.Bundle.Entry.Request;
+import de.samply.reporthub.model.fhir.CapabilityStatement;
 import de.samply.reporthub.model.fhir.Library;
 import de.samply.reporthub.model.fhir.Measure;
 import de.samply.reporthub.model.fhir.MeasureReport;
@@ -22,7 +23,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 @Service
-public class DataStore {
+public class DataStore implements Store {
 
   private static final Logger logger = LoggerFactory.getLogger(DataStore.class);
 
@@ -30,6 +31,15 @@ public class DataStore {
 
   public DataStore(@Qualifier("dataStoreClient") WebClient client) {
     this.client = client;
+  }
+
+  public Mono<CapabilityStatement> fetchMetadata() {
+    logger.debug("Fetching metadata...");
+    return client.get()
+        .uri("/metadata")
+        .retrieve()
+        .bodyToMono(CapabilityStatement.class)
+        .doOnError(e -> logger.warn("Error while fetching metadata: {}", e.getMessage()));
   }
 
   public Mono<Measure> createMeasure(Measure measure) {

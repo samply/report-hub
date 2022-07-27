@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title data-th-text="|Task – ${task.id} – Report Hub|">
+    Task – DAR2Y3DJYEWYK3SO – Report Hub
+  </title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link data-th-href="'/css/bootstrap.min.css'"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+</head>
+<body>
+
+<div data-th-replace="header :: navbar"></div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="col-12">
+      <h2 data-th-text="|Task – ${task.id}|">Task – DAR2Y3DJYEWYK3SO</h2>
+
+      <table class="table">
+        <tbody>
+        <tr>
+          <th scope="row">Activity Definition</th>
+          <td>
+            <a data-th-href="${task.activityDefinitionLink.href}"
+               data-th-text="${task.activityDefinitionLink.label}"
+               href="#">Generate Dashboard Report</a>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Status</th>
+          <td data-th-text="${task.status}">completed</td>
+        </tr>
+        <tr>
+          <th scope="row">Report</th>
+          <td>
+            <a data-th-if="${task.reportLink.isPresent}"
+               data-th-href="${task.reportLink.get().href}"
+               data-th-text="${task.reportLink.get().label}"
+               href="#">Report</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <h3>History</h3>
+
+      <table class="table table-hover">
+        <thead>
+        <tr>
+          <th scope="col">Letztes Update</th>
+          <th scope="col">Status</th>
+          <th scope="col">Report</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr data-th-each="task : ${task.history}">
+          <td data-th-text="${#temporals.format(task.lastModified, 'dd.MM.yyyy HH:mm:ss.SSS')}">
+            22.07.2022 16:42:23
+          </td>
+          <td data-th-text="${task.status}">completed</td>
+          <td>
+            <a data-th-if="${task.reportLink.isPresent}"
+               data-th-href="${task.reportLink.get().href}"
+               data-th-text="${task.reportLink.get().label}"
+               href="#">Report</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

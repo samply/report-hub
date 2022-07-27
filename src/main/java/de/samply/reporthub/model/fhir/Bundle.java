@@ -69,7 +69,7 @@ public record Bundle(Optional<String> id, Code type, List<Entry> entry) implemen
   public record Entry(
       Optional<Resource> resource,
       Optional<Request> request,
-      Optional<Response> response) {
+      Optional<Response> response) implements BackboneElement {
 
     public Entry {
       Objects.requireNonNull(resource);
@@ -116,7 +116,10 @@ public record Bundle(Optional<String> id, Code type, List<Entry> entry) implemen
 
     @JsonInclude(Include.NON_EMPTY)
     @JsonDeserialize(builder = Request.Builder.class)
-    public record Request(Code method, String url, Optional<String> ifNoneExist) {
+    public record Request(
+        Code method,
+        String url,
+        Optional<String> ifNoneExist) implements BackboneElement {
 
       public Request {
         Objects.requireNonNull(method);
@@ -157,7 +160,7 @@ public record Bundle(Optional<String> id, Code type, List<Entry> entry) implemen
 
     @JsonInclude(Include.NON_EMPTY)
     @JsonDeserialize(builder = Response.Builder.class)
-    public record Response(String status, Optional<String> location) {
+    public record Response(String status, Optional<String> location) implements BackboneElement {
 
       public Response {
         Objects.requireNonNull(status);

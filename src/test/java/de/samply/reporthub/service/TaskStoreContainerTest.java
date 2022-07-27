@@ -11,6 +11,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.ActivityDefinition;
+import de.samply.reporthub.model.fhir.CapabilityStatement.Software;
 import de.samply.reporthub.model.fhir.Code;
 import de.samply.reporthub.model.fhir.Identifier;
 import de.samply.reporthub.model.fhir.MeasureReport;
@@ -57,14 +58,24 @@ class TaskStoreContainerTest {
   @BeforeEach
   void setUp() {
     WebClient webClient = WebClient.builder()
-        .baseUrl("http://%s:%d/fhir".formatted(fhirServer.getHost(), fhirServer.getFirstMappedPort()))
+        .baseUrl(
+            "http://%s:%d/fhir".formatted(fhirServer.getHost(), fhirServer.getFirstMappedPort()))
         .defaultRequest(request -> request.accept(APPLICATION_JSON))
         .codecs(configurer -> {
+          configurer.defaultCodecs().maxInMemorySize(1024 * 1024);
           configurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(Util.mapper()));
           configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(Util.mapper()));
         })
         .build();
     taskStore = new TaskStore(webClient);
+  }
+
+  @Test
+  void fetchMetadata() {
+    var capabilityStatement = taskStore.fetchMetadata().block();
+
+    assertNotNull(capabilityStatement);
+    assertEquals(Optional.of("Blaze"), capabilityStatement.software().map(Software::name));
   }
 
   @Test
@@ -74,7 +85,7 @@ class TaskStoreContainerTest {
         .withIdentifier(List.of(Util.beamTaskIdentifier(taskId)))
         .build();
 
-    var task = taskStore.createTask(taskToCreate).block();
+    var task = taskStore.createBeamTask(taskToCreate).block();
 
     assertNotNull(task);
     assertTrue(task.id().isPresent());
@@ -89,7 +100,7 @@ class TaskStoreContainerTest {
         .withIdentifier(List.of(Util.beamTaskIdentifier(taskId)))
         .build();
 
-    var task = taskStore.createTask(taskToCreate).block();
+    var task = taskStore.createBeamTask(taskToCreate).block();
 
     assertNotNull(task);
     assertTrue(task.id().isPresent());
@@ -102,10 +113,11 @@ class TaskStoreContainerTest {
    */
   @Test
   void createTask_onlyOnce() {
-    var taskToCreate = Task.builder(DRAFT.code()).withIdentifier(List.of(BEAM_TASK_IDENTIFIER)).build();
-    var existingTaskId = taskStore.createTask(taskToCreate).map(Task::id).block();
+    var taskToCreate = Task.builder(DRAFT.code()).withIdentifier(List.of(BEAM_TASK_IDENTIFIER))
+        .build();
+    var existingTaskId = taskStore.createBeamTask(taskToCreate).map(Task::id).block();
 
-    var task = taskStore.createTask(taskToCreate).block();
+    var task = taskStore.createBeamTask(taskToCreate).block();
 
     assertNotNull(task);
     assertEquals(existingTaskId, task.id());
@@ -122,7 +134,8 @@ class TaskStoreContainerTest {
   @Test
   void listAllActivityDefinitions_one() {
     String url = UUID.randomUUID().toString();
-    var activityDefinitionToCreate = ActivityDefinition.builder(UNKNOWN.code()).withUrl(url).build();
+    var activityDefinitionToCreate = ActivityDefinition.builder(UNKNOWN.code()).withUrl(url)
+        .build();
     taskStore.createActivityDefinition(activityDefinitionToCreate).block();
 
     var activityDefinitions = taskStore.listAllActivityDefinitions().collectList().block();
@@ -134,7 +147,8 @@ class TaskStoreContainerTest {
   @Test
   void createActivityDefinition() {
     String url = UUID.randomUUID().toString();
-    var activityDefinitionToCreate = ActivityDefinition.builder(UNKNOWN.code()).withUrl(url).build();
+    var activityDefinitionToCreate = ActivityDefinition.builder(UNKNOWN.code()).withUrl(url)
+        .build();
 
     var activityDefinition = taskStore.createActivityDefinition(activityDefinitionToCreate).block();
 
@@ -142,6 +156,24 @@ class TaskStoreContainerTest {
     assertTrue(activityDefinition.id().isPresent());
     assertEquals(Optional.of(url), activityDefinition.url());
     assertEquals(UNKNOWN.code(), activityDefinition.status());
+  }
+
+  /**
+   * Tests that activity definitions with the same canonical URLs are created only once.
+   */
+  @Test
+  void createActivityDefinition_onlyOnce() {
+    String url = UUID.randomUUID().toString();
+    var activityDefinitionToCreate = ActivityDefinition.builder(UNKNOWN.code()).withUrl(url)
+        .build();
+    var existingActivityDefinitionId = taskStore.createActivityDefinition(
+            activityDefinitionToCreate)
+        .map(ActivityDefinition::id).block();
+
+    var activityDefinition = taskStore.createActivityDefinition(activityDefinitionToCreate).block();
+
+    assertNotNull(activityDefinition);
+    assertEquals(existingActivityDefinitionId, activityDefinition.id());
   }
 
   @Test

@@ -2,6 +2,20 @@
 
 A Service able to manage and execute FHIR Quality Reports.
 
+## Dev Setup
+
+Start the services Report Hub depends on by running:
+
+```sh
+docker compose up
+```
+
+Start Report Hub using Maven:
+
+```sh
+mvn spring-boot:run -Dspring-boot.run.arguments="--logging.level.de=DEBUG"
+```
+
 ## License
 
 Copyright 2022 - 2022 The Samply Community

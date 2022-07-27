@@ -90,13 +90,9 @@ public class ReportController {
             .flatMap(diagnosis -> stratum.findComponent(SAMPLE_TYPE_STRATIFIER_PREDICATE)
                 .map(Component::value)
                 .flatMap(CodeableConcept::text)
-                .flatMap(type -> //stratum.findPopulation(INITIAL_POPULATION_PREDICATE)
-                    //.flatMap(Stratifier.Stratum.Population::count)
-                    stratum.population().get(0).count()
-                        .map(count -> {
-                          logger.info(new SampleStratum(diagnosis, type, count).toString());
-                          return new SampleStratum(diagnosis, type, count);
-                        }))).stream())
+                .flatMap(type -> stratum.findPopulation(INITIAL_POPULATION_PREDICATE)
+                    .flatMap(Stratifier.Stratum.Population::count)
+                    .map(count -> new SampleStratum(diagnosis, type, count)))).stream())
         .collect(Collectors.toMap(SampleStratum::diagnosis, s -> switch (s.type) {
           case "blood-plasma" -> new SampleStratum2(s.diagnosis, s.count, 0);
           case "peripheral-blood-cells-vital" -> new SampleStratum2(s.diagnosis, 0, s.count);

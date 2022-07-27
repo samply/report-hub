@@ -4,7 +4,6 @@ import static de.samply.reporthub.model.fhir.TaskStatus.ACCEPTED;
 import static de.samply.reporthub.model.fhir.TaskStatus.COMPLETED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.samply.reporthub.ClasspathIo;
 import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.ActivityDefinition;
@@ -40,8 +39,9 @@ public class EvaluateMeasure {
   private static final Logger logger = LoggerFactory.getLogger(EvaluateMeasure.class);
 
   public static final String GENERATE_DASHBOARD_REPORT_URL =
-      "https://dktk.dkfz.de/fhir/ActivityDefinition/exliquid-generate-dashboard-report";
-  public static final String MEASURE_EXLIQUID_URL = "https://dktk.dkfz.de/fhir/Measure/exliquid";
+      "https://dktk.dkfz.de/fhir/ActivityDefinition/generate-exliquid-dashboard-report";
+  public static final String DASHBOARD_MEASURE_URL =
+      "https://dktk.dkfz.de/fhir/Measure/exliquid-dashboard";
 
   private final TaskStore taskStore;
   private final DataStore dataStore;
@@ -55,8 +55,12 @@ public class EvaluateMeasure {
 
   @PostConstruct
   public void init() {
+    logger.info("Fetch metadata...");
+    taskStore.fetchMetadata().map(Object::toString).subscribe(logger::info);
+    dataStore.fetchMetadata().map(Object::toString).subscribe(logger::info);
+
     logger.info("Ensure TaskStore has ActivityDefinitions...");
-    ClasspathIo.slurp("exliquid/ActivityDefinition-generate-dashboard-export.json")
+    ClasspathIo.slurp("exliquid/ActivityDefinition-generate-dashboard-report.json")
         .flatMap(s -> Util.parseJson(s, ActivityDefinition.class))
         .flatMap(taskStore::createActivityDefinition)
         .subscribe(EvaluateMeasure::logCreateActivityDefinitionSuccess, EvaluateMeasure::logError);
@@ -71,21 +75,21 @@ public class EvaluateMeasure {
     taskStore.requestedTasks(GENERATE_DASHBOARD_REPORT_URL)
         .doOnNext(EvaluateMeasure::logReceivedTask)
         .flatMap(this::acceptTask)
-        .flatMap(task -> dataStore.evaluateMeasure(MEASURE_EXLIQUID_URL)
+        .flatMap(task -> dataStore.evaluateMeasure(DASHBOARD_MEASURE_URL)
             .flatMap(taskStore::createMeasureReport)
             .flatMap(measureReport -> completeTask(task, measureReport)))
         .subscribe(System.out::println, EvaluateMeasure::logError);
   }
 
   private Mono<Measure> loadMeasure() {
-    return ClasspathIo.slurp("exliquid/Measure-exliquid.json")
+    return ClasspathIo.slurp("exliquid/Measure-dashboard.json")
         .flatMap(s -> Util.parseJson(s, Measure.class));
   }
 
   private Mono<Library> loadLibrary() {
-    return ClasspathIo.slurp("exliquid/Library-exliquid.json")
+    return ClasspathIo.slurp("exliquid/Library-dashboard.json")
         .flatMap(s -> Util.parseJson(s, Library.class)
-            .flatMap(library -> ClasspathIo.slurp("exliquid/Library-exliquid.cql")
+            .flatMap(library -> ClasspathIo.slurp("exliquid/Library-dashboard.cql")
                 .map(EvaluateMeasure::createCqlAttachment)
                 .map(library::addContent)));
   }

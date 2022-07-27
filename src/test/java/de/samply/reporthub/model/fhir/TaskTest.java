@@ -12,6 +12,19 @@ import org.junit.jupiter.api.Test;
 class TaskTest {
 
   @Test
+  void deserialize_lastModified() {
+    var task = Util.parseJson("""
+        {
+          "resourceType" : "Task",
+          "status" : "draft",
+          "lastModified" : "2022-07-25T11:33:19.788694+02:00"
+        }""", Task.class).block();
+
+    assertNotNull(task);
+    assertEquals(Optional.of(OffsetDateTime.parse("2022-07-25T11:33:19.788694+02:00")), task.lastModified());
+  }
+
+  @Test
   void deserialize_outputReference() {
     var task = Util.parseJson("""
         {

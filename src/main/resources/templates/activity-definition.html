@@ -1,33 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title data-th-text="|Activity Definition – ${activityDefinition.title.orElse('N/A')} – Report Hub|">
+  <title
+      data-th-text="|Activity Definition – ${activityDefinition.title.orElse('N/A')} – Report Hub|">
     Activity Definition – Generate Dashboard Report – Report Hub
   </title>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link data-th-href="'/css/bootstrap.min.css'" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link data-th-href="'/css/bootstrap.min.css'"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
 </head>
 <body>
+
+<div data-th-replace="header :: navbar"></div>
 
 <div class="container">
 
   <div class="row">
-    <h1 data-th-text="|Activity Definition – ${activityDefinition.title.orElse('N/A')}|">Activity Definition – Generate Dashboard Report</h1>
+    <div class="col-12">
+      <h2 data-th-text="|Activity Definition – ${activityDefinition.title.orElse('N/A')}|">Activity
+        Definition – Generate Dashboard Report</h2>
 
-    <table class="table table-striped">
-      <tbody>
-      <tr>
-        <th scope="row">URL</th>
-        <td data-th-text="${activityDefinition.url.orElse('N/A')}">https://dktk.dkfz.de/fhir/ActivityDefinition/exliquid-generate-dashboard-report</td>
-      </tr>
-      <tr>
-        <th scope="row">Status</th>
-        <td data-th-text="${activityDefinition.status.value.orElse('N/A')}">active</td>
-      </tr>
-      </tbody>
-    </table>
+      <table class="table">
+        <tbody>
+        <tr>
+          <th scope="row">URL</th>
+          <td data-th-text="${activityDefinition.url.orElse('N/A')}">
+            https://dktk.dkfz.de/fhir/ActivityDefinition/exliquid-generate-dashboard-report
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Status</th>
+          <td data-th-text="${activityDefinition.status.value.orElse('N/A')}">active</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
 </div>

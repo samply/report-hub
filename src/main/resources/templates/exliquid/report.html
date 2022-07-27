@@ -14,33 +14,45 @@
 </head>
 <body>
 
+<div data-th-replace="header :: navbar"></div>
+
 <div class="container">
 
   <div class="row">
-    <h1 data-th-text="|EXLIQUID  Report – ${#temporals.format(report.date, 'dd.MM.yyyy')}|">
-      EXLIQUID Report – 23.07.2022
-    </h1>
+    <div class="col-12">
+      <h2 data-th-text="|EXLIQUID  Report – ${#temporals.format(report.date, 'dd.MM.yyyy')}|">
+        EXLIQUID Report – 23.07.2022
+      </h2>
 
-    <table class="table table-striped">
-      <thead>
-      <tr>
-        <th scope="col">Diagnose</th>
-        <th scope="col">Anzahl Patienten</th>
-        <th scope="col">Anzahl Proben</th>
-        <th scope="col">Anzahl Plasma Proben</th>
-        <th scope="col">Anzahl PBMC Proben</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr data-th-each="stratum : ${report.strata}">
-        <td data-th-text="${stratum.diagnosis}">C25</td>
-        <td data-th-text="${stratum.patientCount}">42</td>
-        <td data-th-text="${stratum.plasmaCount} + ${stratum.pbmcCount}">44</td>
-        <td data-th-text="${stratum.plasmaCount}">23</td>
-        <td data-th-text="${stratum.pbmcCount}">21</td>
-      </tr>
-      </tbody>
-    </table>
+      <table class="table table-hover">
+        <thead>
+        <tr>
+          <th scope="col">Diagnosis</th>
+          <th class="text-end" scope="col">#Patients</th>
+          <th class="text-end" scope="col">#Samples</th>
+          <th class="text-end" scope="col">#Plasma Samples</th>
+          <th class="text-end" scope="col">#PBMC Samples</th>
+        </tr>
+        </thead>
+        <tbody class="table-group-divider">
+        <tr data-th-each="stratum : ${report.strata}">
+          <td data-th-text="${stratum.diagnosis}">C25</td>
+          <td class="text-end" data-th-text="${stratum.patientCount}">42</td>
+          <td class="text-end" data-th-text="${stratum.plasmaCount} + ${stratum.pbmcCount}">44</td>
+          <td class="text-end" data-th-text="${stratum.plasmaCount}">23</td>
+          <td class="text-end" data-th-text="${stratum.pbmcCount}">21</td>
+        </tr>
+        </tbody>
+        <tfoot class="table-group-divider">
+        <tr>
+          <td></td>
+          <td class="text-end" data-th-text="${report.totalNumberOfPatients}">23</td>
+          <td class="text-end" data-th-text="${report.totalNumberOfSpecimen}">42</td>
+          <td colspan="2"></td>
+        </tr>
+        </tfoot>
+      </table>
+    </div>
   </div>
 
 </div>

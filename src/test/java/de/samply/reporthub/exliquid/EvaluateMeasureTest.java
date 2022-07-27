@@ -25,7 +25,7 @@ class EvaluateMeasureTest {
 
   @Test
   void readMeasure() throws IOException {
-    var json = ClasspathIo.slurp("exliquid/Measure-exliquid.json").block();
+    var json = ClasspathIo.slurp("exliquid/Measure-dashboard.json").block();
 
     var measure = new ObjectMapper().readValue(json, Measure.class);
 

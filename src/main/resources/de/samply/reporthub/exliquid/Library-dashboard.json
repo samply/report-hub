@@ -2,7 +2,7 @@
   "resourceType": "Library",
   "id": "exliquid",
   "name": "EXLIQUID",
-  "url": "https://dktk.dkfz.de/fhir/Library/exliquid",
+  "url": "https://dktk.dkfz.de/fhir/Library/exliquid-dashboard",
   "status": "active",
   "type": {
     "coding": [

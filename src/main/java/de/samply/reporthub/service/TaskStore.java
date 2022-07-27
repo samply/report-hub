@@ -4,6 +4,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import de.samply.reporthub.model.fhir.ActivityDefinition;
 import de.samply.reporthub.model.fhir.Bundle;
+import de.samply.reporthub.model.fhir.CapabilityStatement;
 import de.samply.reporthub.model.fhir.MeasureReport;
 import de.samply.reporthub.model.fhir.OperationOutcome;
 import de.samply.reporthub.model.fhir.Resource;
@@ -23,7 +24,7 @@ import reactor.core.publisher.Mono;
 import reactor.retry.Repeat;
 
 @Service
-public class TaskStore {
+public class TaskStore implements Store {
 
   private static final Logger logger = LoggerFactory.getLogger(TaskStore.class);
 
@@ -44,6 +45,22 @@ public class TaskStore {
         .share();
   }
 
+  public Mono<CapabilityStatement> fetchMetadata() {
+    logger.debug("Fetching metadata...");
+    return client.get()
+        .uri("/metadata")
+        .retrieve()
+        .bodyToMono(CapabilityStatement.class)
+        .doOnError(e -> logger.warn("Error while fetching metadata: {}", e.getMessage()));
+  }
+
+  public Mono<Task> fetchTask(String id) {
+    return client.get()
+        .uri("/Task/{id}", id)
+        .retrieve()
+        .bodyToMono(Task.class);
+  }
+
   public Flux<Task> listAllTasks() {
     return listAll("/Task", Task.class);
   }
@@ -54,6 +71,15 @@ public class TaskStore {
   }
 
   public Mono<Task> createTask(Task task) {
+    return client.post()
+        .uri("/Task")
+        .contentType(APPLICATION_JSON)
+        .bodyValue(task)
+        .retrieve()
+        .bodyToMono(Task.class);
+  }
+
+  public Mono<Task> createBeamTask(Task task) {
     return task.findIdentifierValue(BEAM_TASK_ID_SYSTEM).map(
         beamTaskId -> client.post()
             .uri("/Task")
@@ -82,6 +108,14 @@ public class TaskStore {
     ).orElse(Mono.error(new Exception("Missing Task ID")));
   }
 
+  public Flux<Task> fetchTaskHistory(String id) {
+    return client.get()
+        .uri("/Task/{id}/_history", id)
+        .retrieve()
+        .bodyToMono(Bundle.class)
+        .flatMapIterable(b -> b.resourcesAs(Task.class).toList());
+  }
+
   public Flux<ActivityDefinition> listAllActivityDefinitions() {
     return listAll("/ActivityDefinition", ActivityDefinition.class);
   }
@@ -93,6 +127,15 @@ public class TaskStore {
         .bodyToMono(ActivityDefinition.class);
   }
 
+  public Mono<ActivityDefinition> findActivityDefinitionByUrl(String url) {
+    return client.get()
+        .uri("/ActivityDefinition?url={url}", url)
+        .retrieve()
+        .bodyToMono(Bundle.class)
+        .flatMap(bundle -> Mono.justOrEmpty(bundle.resourcesAs(ActivityDefinition.class)
+            .findFirst()));
+  }
+
   public Mono<ActivityDefinition> createActivityDefinition(ActivityDefinition activityDefinition) {
     return activityDefinition.url().map(url -> client.post()
         .uri("/ActivityDefinition")
@@ -100,8 +143,8 @@ public class TaskStore {
         .header("If-None-Exist", "url=%s".formatted(url))
         .bodyValue(activityDefinition)
         .exchangeToMono(response -> switch (response.statusCode()) {
-          case CREATED -> response.bodyToMono(ActivityDefinition.class);
-          case BAD_REQUEST -> badRequest(response, "Error while creating a ActivityDefinition");
+          case OK, CREATED -> response.bodyToMono(ActivityDefinition.class);
+          case BAD_REQUEST -> badRequest(response, "Error while creating an ActivityDefinition");
           default -> response.createException().flatMap(Mono::error);
         })
     ).orElse(Mono.error(new Exception("Missing ActivityDefinition URL")));
