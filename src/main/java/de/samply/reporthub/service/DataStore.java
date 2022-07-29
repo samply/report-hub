@@ -4,7 +4,6 @@ import static de.samply.reporthub.model.fhir.BundleType.TRANSACTION;
 import static de.samply.reporthub.model.fhir.HttpVerb.POST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.Bundle;
 import de.samply.reporthub.model.fhir.Bundle.Entry;
 import de.samply.reporthub.model.fhir.Bundle.Entry.Request;
@@ -34,7 +33,7 @@ public class DataStore implements Store {
   }
 
   public Mono<CapabilityStatement> fetchMetadata() {
-    logger.debug("Fetching metadata...");
+    logger.debug("Fetch metadata");
     return client.get()
         .uri("/metadata")
         .retrieve()
@@ -42,22 +41,12 @@ public class DataStore implements Store {
         .doOnError(e -> logger.warn("Error while fetching metadata: {}", e.getMessage()));
   }
 
-  public Mono<Measure> createMeasure(Measure measure) {
-    return measure.url().map(url -> client.post()
-        .uri("/Measure")
-        .contentType(APPLICATION_JSON)
-        .header("If-None-Exist", "url=%s".formatted(url))
-        .bodyValue(measure)
-        .retrieve()
-        .bodyToMono(Measure.class)
-    ).orElse(Mono.error(new Exception("Missing Measure URL.")));
-  }
-
   public Mono<MeasureReport> evaluateMeasure(String url) {
     return client.get()
         .uri("/Measure/$evaluate-measure?measure={url}&periodStart=1900&periodEnd=2200", url)
         .retrieve()
-        .bodyToMono(MeasureReport.class);
+        .bodyToMono(MeasureReport.class)
+        .doOnError(e -> logger.warn("Error while fetching metadata: {}", e.getMessage()));
   }
 
   public Mono<Bundle> createMeasureAndLibrary(Measure measure, Library library) {

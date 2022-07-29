@@ -1,14 +1,9 @@
 package de.samply.reporthub.model.fhir;
 
-import static de.samply.reporthub.model.fhir.BundleType.TRANSACTION;
-import static de.samply.reporthub.model.fhir.TaskStatus.ACCEPTED;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.Bundle.Entry.Response;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class BundleTest {
@@ -19,8 +14,8 @@ class BundleTest {
         {"resourceType": "Bundle", "type": "transaction"}
         """, Bundle.class).block();
 
-    assertNotNull(bundle);
-    assertEquals(TRANSACTION.code(), bundle.type());
+    assertThat(bundle).isNotNull();
+    assertThat(bundle.type().value()).contains("transaction");
   }
 
   @Test
@@ -36,12 +31,12 @@ class BundleTest {
             }
           }]
         }
-        """, new TypeReference<Bundle>() {
-    }).block();
+        """, Bundle.class).block();
 
-    assertNotNull(bundle);
-    assertEquals(TRANSACTION.code(), bundle.type());
-    assertEquals(Optional.of(ACCEPTED.code()), bundle.resourcesAs(Task.class).findFirst().map(Task::status));
+    assertThat(bundle).isNotNull();
+    assertThat(bundle.type().value()).contains("transaction");
+    assertThat(bundle.resourcesAs(Task.class).findFirst().map(Task::status).flatMap(Code::value))
+        .contains("accepted");
   }
 
   @Test
@@ -56,11 +51,10 @@ class BundleTest {
             }
           }]
         }
-        """, new TypeReference<Bundle>() {
-    }).block();
+        """, Bundle.class).block();
 
-    assertNotNull(bundle);
-    assertEquals(TRANSACTION.code(), bundle.type());
-    assertEquals(Optional.of("200"), bundle.entry().get(0).response().map(Response::status));
+    assertThat(bundle).isNotNull();
+    assertThat(bundle.type().value()).contains("transaction");
+    assertThat(bundle.entry().get(0).response().map(Response::status)).contains("200");
   }
 }

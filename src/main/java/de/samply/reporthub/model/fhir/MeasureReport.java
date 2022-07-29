@@ -120,16 +120,16 @@ public record MeasureReport(
       Objects.requireNonNull(stratifier);
     }
 
-    public Optional<String> codeTextValue() {
-      return code.flatMap(CodeableConcept::text);
-    }
-
     public Optional<Population> findPopulation(Predicate<CodeableConcept> codePredicate) {
       return population.stream().filter(p -> p.code.stream().anyMatch(codePredicate)).findFirst();
     }
 
     public Optional<Stratifier> findStratifier(Predicate<CodeableConcept> codePredicate) {
       return stratifier.stream().filter(s -> s.code.stream().anyMatch(codePredicate)).findFirst();
+    }
+
+    public static Builder builder() {
+      return new Builder();
     }
 
     public static class Builder {
@@ -172,8 +172,12 @@ public record MeasureReport(
         Objects.requireNonNull(count);
       }
 
-      public Optional<String> codeTextValue() {
-        return code.flatMap(CodeableConcept::text);
+      public static Population of(CodeableConcept code, Integer count) {
+        return new Builder().withCode(code).withCount(count).build();
+      }
+
+      public static Builder builder() {
+        return new Builder();
       }
 
       public static class Builder {
@@ -206,6 +210,10 @@ public record MeasureReport(
       public Stratifier {
         Objects.requireNonNull(code);
         Objects.requireNonNull(stratum);
+      }
+
+      public static Builder builder() {
+        return new Builder();
       }
 
       public static class Builder {
@@ -250,6 +258,10 @@ public record MeasureReport(
               .findFirst();
         }
 
+        public static Builder builder() {
+          return new Builder();
+        }
+
         public static class Builder {
 
           private CodeableConcept value;
@@ -287,6 +299,10 @@ public record MeasureReport(
             Objects.requireNonNull(code);
             Objects.requireNonNull(value);
           }
+
+          public static Component of(CodeableConcept code, CodeableConcept value) {
+            return new Component(code, value);
+          }
         }
 
         @JsonInclude(Include.NON_EMPTY)
@@ -300,8 +316,8 @@ public record MeasureReport(
             Objects.requireNonNull(count);
           }
 
-          public Optional<String> codeTextValue() {
-            return code.flatMap(CodeableConcept::text);
+          public static Population of(CodeableConcept code, Integer count) {
+            return new Population.Builder().withCode(code).withCount(count).build();
           }
 
           public static class Builder {

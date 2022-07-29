@@ -11,24 +11,29 @@ import java.util.function.Predicate;
 @JsonInclude(Include.NON_EMPTY)
 public record CodeableConcept(List<Coding> coding, Optional<String> text) implements Element {
 
-  public boolean containsCoding(String codeValue) {
-    return containsCoding(Coding.hasCodeValue(codeValue));
-  }
-
   public boolean containsCoding(Predicate<Coding> predicate) {
     return coding.stream().anyMatch(predicate);
   }
 
   /**
-   * Returns a predicate that can be used to find codeable concepts with the given {@code system}
-   * and {@code codeValue}.
+   * Returns a predicate that can be used to find codeable concepts with the given
+   * {@code systemValue} and {@code codeValue}.
    *
-   * @param system the system to match
-   * @param codeValue the code value to match
+   * @param systemValue the system value to match
+   * @param codeValue   the code value to match
    * @return a predicate
    */
-  public static Predicate<CodeableConcept> containsCoding(String system, String codeValue) {
-    return codeableConcept -> codeableConcept.containsCoding(Coding.hasSystem(system).and(Coding.hasCodeValue(codeValue)));
+  public static Predicate<CodeableConcept> containsCoding(String systemValue, String codeValue) {
+    var pred = Coding.hasSystemValue(systemValue).and(Coding.hasCodeValue(codeValue));
+    return codeableConcept -> codeableConcept.containsCoding(pred);
+  }
+
+  public static CodeableConcept of(Coding coding) {
+    return new Builder().withCoding(List.of(coding)).build();
+  }
+
+  public static CodeableConcept of(String text) {
+    return new Builder().withText(text).build();
   }
 
   public static Builder builder() {

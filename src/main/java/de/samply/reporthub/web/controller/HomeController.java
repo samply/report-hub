@@ -1,11 +1,20 @@
 package de.samply.reporthub.web.controller;
 
 import static org.springframework.http.HttpStatus.SEE_OTHER;
+import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED;
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
+import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
+import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
+import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+import static org.springframework.web.reactive.function.server.ServerResponse.ok;
+import static org.springframework.web.reactive.function.server.ServerResponse.status;
 
 import de.samply.reporthub.model.fhir.ActivityDefinition;
 import de.samply.reporthub.model.fhir.Task;
 import de.samply.reporthub.model.fhir.TaskStatus;
 import de.samply.reporthub.service.TaskStore;
+import de.samply.reporthub.util.Monos;
+import de.samply.reporthub.util.Optionals;
 import de.samply.reporthub.web.model.CreateTaskFormActivityDefinition;
 import de.samply.reporthub.web.model.WebTask;
 import java.time.Clock;
@@ -15,21 +24,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@Controller
+@Component
 public class HomeController {
 
   private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
@@ -42,47 +50,68 @@ public class HomeController {
     this.clock = Objects.requireNonNull(clock);
   }
 
-  @GetMapping("/")
-  public String home(UriComponentsBuilder uriBuilder, Model model) {
-    var allActivityDefinitions = taskStore.listAllActivityDefinitions();
-    model.addAttribute("createTaskFormActivityDefinitions", createTaskFormActivityDefinitions(
-        allActivityDefinitions));
-    model.addAttribute("tasks", tasks(uriBuilder, allActivityDefinitions));
-    return "home";
+  @Bean
+  public RouterFunction<ServerResponse> homeRouter() {
+    return route(GET("/"), this::handle)
+        .andRoute(POST("/create-task").and(accept(APPLICATION_FORM_URLENCODED)),
+            this::createTask);
   }
 
-  @PostMapping(value = "/create-task", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-  public Mono<ResponseEntity<Void>> createTask(UriComponentsBuilder uriBuilder,
-      ServerWebExchange serverWebExchange) {
-    return serverWebExchange.getFormData()
+  public Mono<ServerResponse> handle(ServerRequest request) {
+    logger.debug("Request home page");
+    return homeModel(request).flatMap(model -> ok().render("home", model));
+  }
+
+  Mono<Map<String, Object>> homeModel(ServerRequest request) {
+    return Monos.map(taskStore.listAllActivityDefinitions().collectList(),
+            activityDefinitions -> tasks(request, activityDefinitions).collectList(),
+            HomeController::homeModel)
+        .onErrorResume(e -> Mono.just(Map.of("error", "Error while loading tasks.")));
+  }
+
+  static Map<String, Object> homeModel(List<ActivityDefinition> activityDefinitions,
+      List<WebTask> tasks) {
+    return Map.of("createTaskFormActivityDefinitions",
+        createTaskFormActivityDefinitions(activityDefinitions),
+        "tasks", tasks);
+  }
+
+  Mono<ServerResponse> createTask(ServerRequest request) {
+    logger.debug("Create task");
+    return request.formData()
         .flatMap(formData -> taskStore.createTask(requestedTask(formData)))
-        .map(task -> ResponseEntity.status(SEE_OTHER).location(uriBuilder.build().toUri()).build());
+        .flatMap(task -> status(SEE_OTHER).location(request.uriBuilder().replacePath("/").build())
+            .build());
   }
 
-  private Task requestedTask(MultiValueMap<String, String> formData) {
+  Task requestedTask(MultiValueMap<String, String> formData) {
     return Task.builder(TaskStatus.REQUESTED.code())
         .withInstantiatesCanonical(formData.getFirst("instantiates"))
         .withLastModified(OffsetDateTime.now(clock))
         .build();
   }
 
-  private Flux<CreateTaskFormActivityDefinition> createTaskFormActivityDefinitions(
-      Flux<ActivityDefinition> allActivityDefinitions) {
-    return allActivityDefinitions.map(activityDefinition -> activityDefinition.url()
-            .flatMap(url -> activityDefinition.title()
-                .map(title -> new CreateTaskFormActivityDefinition(url, title))))
-        .flatMap(Mono::justOrEmpty);
+  static List<CreateTaskFormActivityDefinition> createTaskFormActivityDefinitions(
+      List<ActivityDefinition> activityDefinitions) {
+    return activityDefinitions.stream()
+        .map(activityDefinition -> Optionals.map(activityDefinition.url(),
+            activityDefinition.title(), CreateTaskFormActivityDefinition::new))
+        .flatMap(Optional::stream)
+        .toList();
   }
 
-  private Flux<WebTask> tasks(UriComponentsBuilder uriBuilder,
-      Flux<ActivityDefinition> allActivityDefinitions) {
-    return allActivityDefinitions
+  private Flux<WebTask> tasks(ServerRequest request,
+      List<ActivityDefinition> allActivityDefinitions) {
+    Map<String, ActivityDefinition> map = allActivityDefinitions.stream()
         .filter(activityDefinition -> activityDefinition.url().isPresent())
-        .collectMap(activityDefinition -> activityDefinition.url().orElseThrow())
-        .map(activityDefinitions -> new WebTasksBuilder(uriBuilder, activityDefinitions))
-        .flatMapMany(webTasksBuilder -> taskStore.listAllTasks()
-            .map(webTasksBuilder::webTask)
-            .flatMap(Mono::justOrEmpty))
+        .collect(Collectors.toMap(activityDefinition -> activityDefinition.url().orElseThrow(),
+            Function.identity()));
+    WebTasksBuilder builder = new WebTasksBuilder(request, map);
+    return taskStore.listAllTasks()
+        //.onErrorResume(e -> Flux.empty())
+        //.delayElements(Duration.ofMillis(1000))
+        .map(builder::webTask)
+        .flatMap(Mono::justOrEmpty)
         // TODO: sort with FHIR when Blaze is able to
         .sort(Comparator.comparing(WebTask::lastModified, Comparator.reverseOrder()));
   }
@@ -91,9 +120,9 @@ public class HomeController {
 
     private final Map<String, ActivityDefinition> activityDefinitions;
 
-    private WebTasksBuilder(UriComponentsBuilder uriBuilder,
+    private WebTasksBuilder(ServerRequest request,
         Map<String, ActivityDefinition> activityDefinitions) {
-      super(uriBuilder);
+      super(request);
       this.activityDefinitions = Objects.requireNonNull(activityDefinitions);
     }
 

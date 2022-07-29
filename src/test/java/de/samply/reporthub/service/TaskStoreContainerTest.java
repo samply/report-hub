@@ -4,9 +4,7 @@ import static de.samply.reporthub.model.fhir.PublicationStatus.UNKNOWN;
 import static de.samply.reporthub.model.fhir.TaskStatus.DRAFT;
 import static de.samply.reporthub.model.fhir.TaskStatus.REQUESTED;
 import static de.samply.reporthub.service.TaskStore.BEAM_TASK_ID_SYSTEM;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import de.samply.reporthub.Util;
@@ -18,7 +16,6 @@ import de.samply.reporthub.model.fhir.MeasureReport;
 import de.samply.reporthub.model.fhir.Task;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,13 +36,13 @@ class TaskStoreContainerTest {
 
   private static final Logger logger = LoggerFactory.getLogger(TaskStoreContainerTest.class);
 
-  public static final String BEAM_TASK_ID = "6db99ca6-0d0b-4ec9-9657-7b51ca3977fa";
-  public static final Identifier BEAM_TASK_IDENTIFIER = Util.beamTaskIdentifier(BEAM_TASK_ID);
-  public static final OffsetDateTime DATE_TIME = OffsetDateTime.parse("2022-07-20T21:21:01+02:00");
+  private static final String BEAM_TASK_ID = "6db99ca6-0d0b-4ec9-9657-7b51ca3977fa";
+  private static final Identifier BEAM_TASK_IDENTIFIER = Util.beamTaskIdentifier(BEAM_TASK_ID);
+  private static final OffsetDateTime DATE_TIME = OffsetDateTime.parse("2022-07-20T21:21:01+02:00");
 
   @Container
   @SuppressWarnings("resource")
-  private final GenericContainer<?> fhirServer = new GenericContainer<>("samply/blaze:0.17")
+  private final GenericContainer<?> blaze = new GenericContainer<>("samply/blaze:0.17")
       .withImagePullPolicy(PullPolicy.alwaysPull())
       .withEnv("LOG_LEVEL", "debug")
       .withExposedPorts(8080)
@@ -55,11 +52,11 @@ class TaskStoreContainerTest {
 
   private TaskStore taskStore;
 
+  @SuppressWarnings("HttpUrlsUsage")
   @BeforeEach
   void setUp() {
     WebClient webClient = WebClient.builder()
-        .baseUrl(
-            "http://%s:%d/fhir".formatted(fhirServer.getHost(), fhirServer.getFirstMappedPort()))
+        .baseUrl("http://%s:%d/fhir".formatted(blaze.getHost(), blaze.getFirstMappedPort()))
         .defaultRequest(request -> request.accept(APPLICATION_JSON))
         .codecs(configurer -> {
           configurer.defaultCodecs().maxInMemorySize(1024 * 1024);
@@ -74,38 +71,49 @@ class TaskStoreContainerTest {
   void fetchMetadata() {
     var capabilityStatement = taskStore.fetchMetadata().block();
 
-    assertNotNull(capabilityStatement);
-    assertEquals(Optional.of("Blaze"), capabilityStatement.software().map(Software::name));
+    assertThat(capabilityStatement).isNotNull();
+    assertThat(capabilityStatement.software().map(Software::name)).contains("Blaze");
+  }
+
+  @Test
+  void fetchTask() {
+    var taskToCreate = Task.builder(DRAFT.code()).build();
+    var id = taskStore.createTask(taskToCreate).blockOptional().flatMap(Task::id).orElseThrow();
+
+    var task = taskStore.fetchTask(id).block();
+
+    assertThat(task).isNotNull();
+    assertThat(task.status().value()).as("task status").contains("draft");
   }
 
   @Test
   void createTask_draft() {
-    String taskId = UUID.randomUUID().toString();
+    var taskId = UUID.randomUUID().toString();
     var taskToCreate = Task.builder(DRAFT.code())
         .withIdentifier(List.of(Util.beamTaskIdentifier(taskId)))
         .build();
 
     var task = taskStore.createBeamTask(taskToCreate).block();
 
-    assertNotNull(task);
-    assertTrue(task.id().isPresent());
-    assertEquals(Optional.of(taskId), task.findIdentifierValue(BEAM_TASK_ID_SYSTEM));
-    assertEquals(DRAFT.code(), task.status());
+    assertThat(task).isNotNull();
+    assertThat(task.id()).isPresent();
+    assertThat(task.findIdentifierValue(BEAM_TASK_ID_SYSTEM)).contains(taskId);
+    assertThat(task.status().value()).as("task status").contains("draft");
   }
 
   @Test
   void createTask_requested() {
-    String taskId = UUID.randomUUID().toString();
+    var beamId = UUID.randomUUID().toString();
     var taskToCreate = Task.builder(REQUESTED.code())
-        .withIdentifier(List.of(Util.beamTaskIdentifier(taskId)))
+        .withIdentifier(List.of(Util.beamTaskIdentifier(beamId)))
         .build();
 
     var task = taskStore.createBeamTask(taskToCreate).block();
 
-    assertNotNull(task);
-    assertTrue(task.id().isPresent());
-    assertEquals(Optional.of(taskId), task.findIdentifierValue(BEAM_TASK_ID_SYSTEM));
-    assertEquals(REQUESTED.code(), task.status());
+    assertThat(task).isNotNull();
+    assertThat(task.id()).isPresent();
+    assertThat(task.findIdentifierValue(BEAM_TASK_ID_SYSTEM)).contains(beamId);
+    assertThat(task.status().value()).as("task status").contains("requested");
   }
 
   /**
@@ -115,33 +123,32 @@ class TaskStoreContainerTest {
   void createTask_onlyOnce() {
     var taskToCreate = Task.builder(DRAFT.code()).withIdentifier(List.of(BEAM_TASK_IDENTIFIER))
         .build();
-    var existingTaskId = taskStore.createBeamTask(taskToCreate).map(Task::id).block();
+    var existingTaskId = taskStore.createBeamTask(taskToCreate).blockOptional().flatMap(Task::id)
+        .orElseThrow();
 
     var task = taskStore.createBeamTask(taskToCreate).block();
 
-    assertNotNull(task);
-    assertEquals(existingTaskId, task.id());
+    assertThat(task).isNotNull();
+    assertThat(task.id()).contains(existingTaskId);
   }
 
   @Test
   void listAllActivityDefinitions_empty() {
     var activityDefinitions = taskStore.listAllActivityDefinitions().collectList().block();
 
-    assertNotNull(activityDefinitions);
-    assertTrue(activityDefinitions.isEmpty());
+    assertThat(activityDefinitions).isEmpty();
   }
 
   @Test
   void listAllActivityDefinitions_one() {
-    String url = UUID.randomUUID().toString();
+    var url = UUID.randomUUID().toString();
     var activityDefinitionToCreate = ActivityDefinition.builder(UNKNOWN.code()).withUrl(url)
         .build();
     taskStore.createActivityDefinition(activityDefinitionToCreate).block();
 
     var activityDefinitions = taskStore.listAllActivityDefinitions().collectList().block();
 
-    assertNotNull(activityDefinitions);
-    assertEquals(1, activityDefinitions.size());
+    assertThat(activityDefinitions).hasSize(1);
   }
 
   @Test
@@ -152,10 +159,10 @@ class TaskStoreContainerTest {
 
     var activityDefinition = taskStore.createActivityDefinition(activityDefinitionToCreate).block();
 
-    assertNotNull(activityDefinition);
-    assertTrue(activityDefinition.id().isPresent());
-    assertEquals(Optional.of(url), activityDefinition.url());
-    assertEquals(UNKNOWN.code(), activityDefinition.status());
+    assertThat(activityDefinition).isNotNull();
+    assertThat(activityDefinition.id()).isPresent();
+    assertThat(activityDefinition.url()).contains(url);
+    assertThat(activityDefinition.status().value()).contains("unknown");
   }
 
   /**
@@ -163,17 +170,16 @@ class TaskStoreContainerTest {
    */
   @Test
   void createActivityDefinition_onlyOnce() {
-    String url = UUID.randomUUID().toString();
+    var url = UUID.randomUUID().toString();
     var activityDefinitionToCreate = ActivityDefinition.builder(UNKNOWN.code()).withUrl(url)
         .build();
-    var existingActivityDefinitionId = taskStore.createActivityDefinition(
-            activityDefinitionToCreate)
-        .map(ActivityDefinition::id).block();
+    var existingId = taskStore.createActivityDefinition(activityDefinitionToCreate).blockOptional()
+        .flatMap(ActivityDefinition::id).orElseThrow();
 
     var activityDefinition = taskStore.createActivityDefinition(activityDefinitionToCreate).block();
 
-    assertNotNull(activityDefinition);
-    assertEquals(existingActivityDefinitionId, activityDefinition.id());
+    assertThat(activityDefinition).isNotNull();
+    assertThat(activityDefinition.id()).contains(existingId);
   }
 
   @Test
@@ -185,10 +191,10 @@ class TaskStoreContainerTest {
 
     var measureReport = taskStore.createMeasureReport(measureReportToCreate).block();
 
-    assertNotNull(measureReport);
-    assertTrue(measureReport.id().isPresent());
-    assertEquals(Code.valueOf("draft"), measureReport.status());
-    assertEquals(Code.valueOf("individual"), measureReport.type());
-    assertEquals(Optional.of(DATE_TIME), measureReport.date());
+    assertThat(measureReport).isNotNull();
+    assertThat(measureReport.id()).isPresent();
+    assertThat(measureReport.status().value()).contains("draft");
+    assertThat(measureReport.type().value()).contains("individual");
+    assertThat(measureReport.date()).contains(DATE_TIME);
   }
 }

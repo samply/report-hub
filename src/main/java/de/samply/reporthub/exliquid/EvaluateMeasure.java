@@ -24,7 +24,6 @@ import de.samply.reporthub.service.TaskStore;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Base64;
-import java.util.List;
 import java.util.Objects;
 import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -42,6 +41,11 @@ public class EvaluateMeasure {
       "https://dktk.dkfz.de/fhir/ActivityDefinition/generate-exliquid-dashboard-report";
   public static final String DASHBOARD_MEASURE_URL =
       "https://dktk.dkfz.de/fhir/Measure/exliquid-dashboard";
+  public static final String EXLIQUID_TASK_OUTPUT =
+      "https://dktk.dkfz.de/fhir/CodeSystem/exliquid-task-output";
+
+  public static final CodeableConcept MEASURE_REPORT =
+      CodeableConcept.of(Coding.of(EXLIQUID_TASK_OUTPUT, "measure-report"));
 
   private final TaskStore taskStore;
   private final DataStore dataStore;
@@ -55,10 +59,6 @@ public class EvaluateMeasure {
 
   @PostConstruct
   public void init() {
-    logger.info("Fetch metadata...");
-    taskStore.fetchMetadata().map(Object::toString).subscribe(logger::info);
-    dataStore.fetchMetadata().map(Object::toString).subscribe(logger::info);
-
     logger.info("Ensure TaskStore has ActivityDefinitions...");
     ClasspathIo.slurp("exliquid/ActivityDefinition-generate-dashboard-report.json")
         .flatMap(s -> Util.parseJson(s, ActivityDefinition.class))
@@ -114,15 +114,8 @@ public class EvaluateMeasure {
   }
 
   private Mono<Output> measureReportOutput(MeasureReport measureReport) {
-    return measureReport.id().map(id -> Output.builder(
-            CodeableConcept.builder()
-                .withCoding(List.of(
-                    Coding.builder()
-                        .withSystem("https://dktk.dkfz.de/fhir/CodeSystem/exliquid-task-output")
-                        .withCode(Code.valueOf("measure-report"))
-                        .build()))
-                .build(),
-            Reference.builder().withReference("MeasureReport/" + id).build()).build())
+    return measureReport.id()
+        .map(id -> new Output(MEASURE_REPORT, Reference.ofReference("MeasureReport", id)))
         .map(Mono::just)
         .orElse(Mono.error(new Exception("Missing MeasureReport ID.")));
   }

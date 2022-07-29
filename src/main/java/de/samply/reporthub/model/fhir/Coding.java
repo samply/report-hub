@@ -10,14 +10,26 @@ import java.util.function.Predicate;
 
 @JsonInclude(Include.NON_EMPTY)
 @JsonDeserialize(builder = Builder.class)
-public record Coding(Optional<String> system, Optional<Code> code) implements Element {
+public record Coding(Optional<Uri> system, Optional<Code> code) implements Element {
 
-  public static Predicate<Coding> hasSystem(String system) {
-    return coding -> coding.system.equals(Optional.of(system));
+  public Coding {
+    Objects.requireNonNull(system);
+    Objects.requireNonNull(code);
+  }
+
+  public static Predicate<Coding> hasSystemValue(String systemValue) {
+    return coding -> coding.system.map(system -> system.hasValue(systemValue)).orElse(false);
   }
 
   public static Predicate<Coding> hasCodeValue(String codeValue) {
     return coding -> coding.code.map(code -> code.hasValue(codeValue)).orElse(false);
+  }
+
+  public static Coding of(String systemValue, String codeValue) {
+    return new Builder()
+        .withSystem(Uri.valueOf(systemValue))
+        .withCode(Code.valueOf(codeValue))
+        .build();
   }
 
   public static Builder builder() {
@@ -26,10 +38,10 @@ public record Coding(Optional<String> system, Optional<Code> code) implements El
 
   public static class Builder {
 
-    private String system;
+    private Uri system;
     private Code code;
 
-    public Builder withSystem(String system) {
+    public Builder withSystem(Uri system) {
       this.system = Objects.requireNonNull(system);
       return this;
     }

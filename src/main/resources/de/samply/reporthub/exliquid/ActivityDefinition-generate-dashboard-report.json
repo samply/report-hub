@@ -1,10 +1,10 @@
 {
-  "resourceType" : "ActivityDefinition",
-  "url" : "https://dktk.dkfz.de/fhir/ActivityDefinition/generate-exliquid-dashboard-report",
-  "version" : "0.1.0",
+  "resourceType": "ActivityDefinition",
+  "url": "https://dktk.dkfz.de/fhir/ActivityDefinition/generate-exliquid-dashboard-report",
+  "version": "0.1.0",
   "name": "generate-exliquid-dashboard-report",
-  "title" : "Generate EXLIQUID Dashboard Report",
-  "status" : "draft",
-  "date" : "2022-07-26",
-  "description" : "Generates a MeasureReport using the Measure 'https://dktk.dkfz.de/fhir/Measure/exliquid-dashboard'."
+  "title": "Generate EXLIQUID Dashboard Report",
+  "status": "draft",
+  "date": "2022-07-26",
+  "description": "Generates a MeasureReport using the Measure 'https://dktk.dkfz.de/fhir/Measure/exliquid-dashboard'."
 }

@@ -1,11 +1,9 @@
 package de.samply.reporthub.model.fhir;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import de.samply.reporthub.Util;
 import java.time.OffsetDateTime;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class MeasureReportTest {
@@ -21,8 +19,8 @@ class MeasureReportTest {
         }
         """, MeasureReport.class).block();
 
-    assertNotNull(measureReport);
-    assertEquals(Code.valueOf("draft"), measureReport.status());
+    assertThat(measureReport).isNotNull();
+    assertThat(measureReport.status().value()).contains("draft");
   }
 
   @Test
@@ -37,40 +35,45 @@ class MeasureReportTest {
         }
         """, MeasureReport.class).block();
 
-    assertNotNull(measureReport);
-    assertEquals(Optional.of(OffsetDateTime.parse("2022-07-20T21:21:01+02:00")),
-        measureReport.date());
+    assertThat(measureReport).isNotNull();
+    assertThat(measureReport.date()).contains(OffsetDateTime.parse("2022-07-20T21:21:01+02:00"));
   }
 
   @Test
   void serialize_date() {
-    var measureReport = MeasureReport.builder(Code.valueOf("draft"), Code.valueOf("individual"), "foo")
+    var measureReport = MeasureReport.builder(Code.valueOf("draft"), Code.valueOf("individual"),
+            "foo")
         .withDate(OffsetDateTime.parse("2022-07-20T21:21:01+02:00"))
         .build();
 
-    assertEquals("""
+    var string = Util.prettyPrintJson(measureReport).block();
+
+    assertThat(string).isEqualTo("""
         {
           "resourceType" : "MeasureReport",
           "status" : "draft",
           "type" : "individual",
           "measure" : "foo",
           "date" : "2022-07-20T21:21:01+02:00"
-        }""", Util.prettyPrintJson(measureReport).block());
+        }""");
   }
 
   @Test
   void serialize_date_zulu() {
-    var measureReport = MeasureReport.builder(Code.valueOf("draft"), Code.valueOf("individual"), "foo")
+    var measureReport = MeasureReport.builder(Code.valueOf("draft"), Code.valueOf("individual"),
+            "foo")
         .withDate(OffsetDateTime.parse("2022-07-20T21:21:01Z"))
         .build();
 
-    assertEquals("""
+    var string = Util.prettyPrintJson(measureReport).block();
+
+    assertThat(string).isEqualTo("""
         {
           "resourceType" : "MeasureReport",
           "status" : "draft",
           "type" : "individual",
           "measure" : "foo",
           "date" : "2022-07-20T21:21:01Z"
-        }""", Util.prettyPrintJson(measureReport).block());
+        }""");
   }
 }

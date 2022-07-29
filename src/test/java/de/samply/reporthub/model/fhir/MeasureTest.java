@@ -1,10 +1,8 @@
 package de.samply.reporthub.model.fhir;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import de.samply.reporthub.Util;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class MeasureTest {
@@ -15,7 +13,7 @@ class MeasureTest {
         {"resourceType": "Measure", "name": "foo"}
         """, Measure.class).block();
 
-    assertNotNull(measure);
-    assertEquals(Optional.of("foo"), measure.name());
+    assertThat(measure).isNotNull();
+    assertThat(measure.name()).contains("foo");
   }
 }

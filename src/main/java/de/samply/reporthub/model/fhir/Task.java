@@ -40,6 +40,10 @@ public record Task(
     Objects.requireNonNull(output);
   }
 
+  public Task withId(String id) {
+    return new Builder(this).withId(id).build();
+  }
+
   public Optional<String> findIdentifierValue(String system) {
     return identifier.stream()
         .filter(i -> Optional.of(system).equals(i.system()))
@@ -143,11 +147,17 @@ public record Task(
 
   @JsonSerialize(using = Serializer.class)
   @JsonDeserialize(builder = Output.Builder.class)
-  public record Output(CodeableConcept type, Element value) implements BackboneElement {
+  public record Output(List<Extension> extension, CodeableConcept type, Element value) implements
+      BackboneElement {
 
     public Output {
+      Objects.requireNonNull(extension);
       Objects.requireNonNull(type);
       Objects.requireNonNull(value);
+    }
+
+    public Output(CodeableConcept type, Element value) {
+      this(List.of(), type, value);
     }
 
     public <T extends Element> Optional<T> castValue(Class<T> type) {
@@ -160,6 +170,7 @@ public record Task(
 
     public static class Builder {
 
+      private List<Extension> extension;
       private CodeableConcept type;
       private Element value;
 
@@ -169,6 +180,11 @@ public record Task(
       private Builder(CodeableConcept type, Element value) {
         this.type = Objects.requireNonNull(type);
         this.value = Objects.requireNonNull(value);
+      }
+
+      public Builder withExtension(List<Extension> extension) {
+        this.extension = extension;
+        return this;
       }
 
       public Builder withType(CodeableConcept type) {
@@ -182,7 +198,7 @@ public record Task(
       }
 
       public Output build() {
-        return new Output(type, value);
+        return new Output(Util.copyOfNullable(extension), type, value);
       }
     }
 

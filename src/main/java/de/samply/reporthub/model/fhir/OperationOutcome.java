@@ -21,6 +21,10 @@ public record OperationOutcome(Optional<String> id, List<Issue> issue) implement
     Objects.requireNonNull(issue);
   }
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public static class Builder {
 
     private String id;

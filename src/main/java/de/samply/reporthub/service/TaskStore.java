@@ -41,12 +41,14 @@ public class TaskStore implements Store {
   @PostConstruct
   public void init() {
     requestedTasks = listAll("/Task?status=requested", Task.class)
+        .doOnError(e -> logger.warn("Error while fetching requested tasks: {}", e.getMessage()))
+        .onErrorResume(e -> Flux.empty())
         .repeatWhen(Repeat.times(Long.MAX_VALUE).fixedBackoff(Duration.ofSeconds(1)))
         .share();
   }
 
   public Mono<CapabilityStatement> fetchMetadata() {
-    logger.debug("Fetching metadata...");
+    logger.debug("Fetch metadata");
     return client.get()
         .uri("/metadata")
         .retrieve()
@@ -55,10 +57,14 @@ public class TaskStore implements Store {
   }
 
   public Mono<Task> fetchTask(String id) {
+    logger.debug("Fetch Task with id: {}", id);
     return client.get()
         .uri("/Task/{id}", id)
-        .retrieve()
-        .bodyToMono(Task.class);
+        .exchangeToMono(response -> switch (response.statusCode()) {
+          case OK -> response.bodyToMono(Task.class);
+          case NOT_FOUND -> resourceNotFound(response, "Task", id);
+          default -> response.createException().flatMap(Mono::error);
+        });
   }
 
   public Flux<Task> listAllTasks() {
@@ -66,8 +72,8 @@ public class TaskStore implements Store {
   }
 
   public Flux<Task> requestedTasks(String canonical) {
-    return requestedTasks.filter(task ->
-        Optional.of(canonical).equals(task.instantiatesCanonical()));
+    return requestedTasks
+        .filter(task -> Optional.of(canonical).equals(task.instantiatesCanonical()));
   }
 
   public Mono<Task> createTask(Task task) {
@@ -145,16 +151,21 @@ public class TaskStore implements Store {
         .exchangeToMono(response -> switch (response.statusCode()) {
           case OK, CREATED -> response.bodyToMono(ActivityDefinition.class);
           case BAD_REQUEST -> badRequest(response, "Error while creating an ActivityDefinition");
+          case NOT_FOUND -> notFound(response, "ActivityDefinition endpoint not found");
           default -> response.createException().flatMap(Mono::error);
         })
     ).orElse(Mono.error(new Exception("Missing ActivityDefinition URL")));
   }
 
   public Mono<MeasureReport> fetchMeasureReport(String id) {
+    logger.debug("Fetch MeasureReport with id: {}", id);
     return client.get()
         .uri("/MeasureReport/{id}", id)
-        .retrieve()
-        .bodyToMono(MeasureReport.class);
+        .exchangeToMono(response -> switch (response.statusCode()) {
+          case OK -> response.bodyToMono(MeasureReport.class);
+          case NOT_FOUND -> resourceNotFound(response, "MeasureReport", id);
+          default -> response.createException().flatMap(Mono::error);
+        });
   }
 
   public Mono<MeasureReport> createMeasureReport(MeasureReport measureReport) {
@@ -165,6 +176,7 @@ public class TaskStore implements Store {
         .exchangeToMono(response -> switch (response.statusCode()) {
           case CREATED -> response.bodyToMono(MeasureReport.class);
           case BAD_REQUEST -> badRequest(response, "Error while creating a MeasureReport");
+          case NOT_FOUND -> notFound(response, "MeasureReport endpoint not found");
           default -> response.createException().flatMap(Mono::error);
         });
   }
@@ -172,14 +184,39 @@ public class TaskStore implements Store {
   private <T extends Resource> Flux<T> listAll(String uri, Class<T> type) {
     return client.get()
         .uri(uri)
-        .retrieve()
-        .bodyToFlux(Bundle.class)
-        .flatMapIterable(b -> b.resourcesAs(type).toList());
+        .exchangeToFlux(response -> switch (response.statusCode()) {
+          case OK -> response.bodyToFlux(Bundle.class)
+              .flatMapIterable(b -> b.resourcesAs(type).toList());
+          case BAD_REQUEST -> this.<T>badRequest(response,
+              "Error while listing %s".formatted(type.getSimpleName())).flux();
+          case NOT_FOUND -> this.<T>notFound(response,
+              "%s endpoint not found".formatted(type.getSimpleName())).flux();
+          default -> response.createException().flatMap(Mono::<T>error).flux();
+        });
   }
 
   private <T> Mono<T> badRequest(ClientResponse response, String message) {
-    return response.bodyToMono(OperationOutcome.class)
-        .flatMap(outcome -> Mono.error(new BadRequestException(message + ": 400 Bad Request",
-            outcome)));
+    logger.warn(message);
+    if (response.headers().contentLength().orElse(0) > 0) {
+      return response.bodyToMono(OperationOutcome.class)
+          .flatMap(outcome -> Mono.error(new BadRequestException(message, outcome)));
+    } else {
+      return Mono.error(new BadRequestException(message));
+    }
+  }
+
+  private <T> Mono<T> notFound(ClientResponse response, String message) {
+    logger.warn(message);
+    if (response.headers().contentLength().orElse(0) > 0) {
+      return response.bodyToMono(OperationOutcome.class)
+          .flatMap(outcome -> Mono.error(new NotFoundException(message, outcome)));
+    } else {
+      return Mono.error(new NotFoundException(message));
+    }
+  }
+
+  private <T> Mono<T> resourceNotFound(ClientResponse response, String type, String id) {
+    logger.warn("%s with id `%s` was not found.".formatted(type, id));
+    return response.releaseBody().then(Mono.error(new ResourceNotFoundException(type, id)));
   }
 }

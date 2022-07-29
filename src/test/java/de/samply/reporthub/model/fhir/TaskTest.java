@@ -1,12 +1,11 @@
 package de.samply.reporthub.model.fhir;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.Task.Output;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class TaskTest {
@@ -20,8 +19,9 @@ class TaskTest {
           "lastModified" : "2022-07-25T11:33:19.788694+02:00"
         }""", Task.class).block();
 
-    assertNotNull(task);
-    assertEquals(Optional.of(OffsetDateTime.parse("2022-07-25T11:33:19.788694+02:00")), task.lastModified());
+    assertThat(task).isNotNull();
+    assertThat(task.lastModified())
+        .contains(OffsetDateTime.parse("2022-07-25T11:33:19.788694+02:00"));
   }
 
   @Test
@@ -40,9 +40,10 @@ class TaskTest {
           } ]
         }""", Task.class).block();
 
-    assertNotNull(task);
-    assertEquals(Code.valueOf("draft"), task.status());
-    assertEquals(Optional.of("bar"), task.output().get(0).castValue(Reference.class).flatMap(Reference::reference));
+    assertThat(task).isNotNull();
+    assertThat(task.status().value()).contains("draft");
+    assertThat(task.output().get(0).castValue(Reference.class).flatMap(Reference::reference))
+        .contains("bar");
   }
 
   @Test
@@ -53,7 +54,9 @@ class TaskTest {
             Reference.builder().withReference("bar").build()).build()))
         .build();
 
-    assertEquals("""
+    var string = Util.prettyPrintJson(measureReport).block();
+
+    assertThat(string).isEqualTo("""
         {
           "resourceType" : "Task",
           "status" : "draft",
@@ -65,6 +68,6 @@ class TaskTest {
               "reference" : "bar"
             }
           } ]
-        }""", Util.prettyPrintJson(measureReport).block());
+        }""");
   }
 }

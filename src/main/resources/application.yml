@@ -3,8 +3,8 @@ app:
     appId: app1
     secret: foo
     proxy:
-       id: proxy23
-       baseUrl: 'http://localhost:8082'
+      id: proxy23
+      baseUrl: 'http://localhost:8082'
   taskStore:
     baseUrl: 'http://localhost:8083/fhir'
   dataStore:

@@ -1,21 +1,22 @@
 package de.samply.reporthub.model.fhir;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Optional;
+import de.samply.reporthub.Util;
 import org.junit.jupiter.api.Test;
 
 class ExtensionTest {
 
   @Test
-  void deserialize_code() throws JsonProcessingException {
-    var extension = new ObjectMapper().readValue("{\"url\": \"foo\", \"valueCode\": \"bar\"}",
-        Extension.class);
+  void deserialize_code() {
+    var extension = Util.parseJson("""
+        {"url": "foo", "valueCode": "bar"}
+        """, Extension.class).block();
 
-    assertEquals(Optional.of("bar"), extension.castValue(Code.class).flatMap(Code::value));
+    assertThat(extension).isNotNull();
+    assertThat(extension.castValue(Code.class).flatMap(Code::value)).contains("bar");
   }
 
   @Test
@@ -25,6 +26,6 @@ class ExtensionTest {
 
     var string = new ObjectMapper().writeValueAsString(extension);
 
-    assertEquals("{\"url\":\"foo\",\"valueCode\":\"bar\"}", string);
+    assertThat(string).isEqualTo("{\"url\":\"foo\",\"valueCode\":\"bar\"}");
   }
 }

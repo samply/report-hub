@@ -15,6 +15,10 @@ public record Reference(Optional<String> reference) implements Element {
     Objects.requireNonNull(reference);
   }
 
+  public static Reference ofReference(String type, String id) {
+    return new Builder().withReference(type + "/" + id).build();
+  }
+
   public static Builder builder() {
     return new Builder();
   }

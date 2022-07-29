@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 public record Code(Optional<String> value) implements Element {
 
@@ -50,7 +49,7 @@ public record Code(Optional<String> value) implements Element {
   @JsonCreator
   public static Code jsonCreator(JsonNode node) {
     if (node.isTextual()) {
-      return Code.builder().withValue(node.textValue()).build();
+      return Code.valueOf(node.textValue());
     }
     throw new RuntimeException("Invalid JSON node `%s` for Code type.".formatted(node));
   }

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>404 – Report Hub</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link data-th-href="'/css/bootstrap.min.css'"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+</head>
+<body>
+
+<div data-th-replace="header :: navbar"></div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="col-12">
+      <p class="fs-1 text-center">404</p>
+      <p class="text-center" data-th-if="${error}" data-th-text="${error}">message</p>
+    </div>
+  </div>
+
+</div>

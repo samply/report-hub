@@ -15,7 +15,7 @@ public record Identifier(Optional<String> system, Optional<String> value) implem
   }
 
   public static class Builder {
-    
+
     private String system;
     private String value;
 

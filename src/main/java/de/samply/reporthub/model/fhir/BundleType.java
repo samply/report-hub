@@ -2,7 +2,8 @@ package de.samply.reporthub.model.fhir;
 
 public enum BundleType {
 
-  TRANSACTION("transaction");
+  TRANSACTION("transaction"),
+  BATCH("batch");
 
   private final Code code;
 

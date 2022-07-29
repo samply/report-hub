@@ -4,27 +4,27 @@ import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.ActivityDefinition;
 import de.samply.reporthub.model.fhir.Reference;
 import de.samply.reporthub.model.fhir.Task.Output;
+import de.samply.reporthub.util.Optionals;
 import de.samply.reporthub.web.model.Link;
 import java.util.Objects;
 import java.util.Optional;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.reactive.function.server.ServerRequest;
 
 class AbstractWebTasksBuilder {
 
-  private final UriComponentsBuilder uriBuilder;
+  private final ServerRequest request;
 
-  AbstractWebTasksBuilder(UriComponentsBuilder uriBuilder) {
-    this.uriBuilder = Objects.requireNonNull(uriBuilder);
+  AbstractWebTasksBuilder(ServerRequest request) {
+    this.request = Objects.requireNonNull(request);
   }
 
   Optional<Link> activityDefinitionLink(ActivityDefinition activityDefinition) {
-    return activityDefinition.id()
-        .flatMap(id -> activityDefinition.title()
-            .map(title -> activityDefinitionLink(id, title)));
+    return Optionals.map(activityDefinition.id(), activityDefinition.title(),
+        this::activityDefinitionLink);
   }
 
   private Link activityDefinitionLink(String id, String title) {
-    return new Link(uriBuilder.cloneBuilder().path("activity-definition/{id}").build(id), title);
+    return new Link(request.uriBuilder().path("activity-definition/{id}").build(id), title);
   }
 
   Optional<Link> reportLink(Output output) {
@@ -35,6 +35,6 @@ class AbstractWebTasksBuilder {
   }
 
   private Link reportLink(String id) {
-    return new Link(uriBuilder.cloneBuilder().path("exliquid-report/{id}").build(id), "Report");
+    return new Link(request.uriBuilder().path("exliquid-report/{id}").build(id), "Report");
   }
 }

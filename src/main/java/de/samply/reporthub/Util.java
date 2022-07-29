@@ -7,11 +7,8 @@ import static de.samply.reporthub.service.TaskStore.BEAM_TASK_ID_SYSTEM;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.samply.reporthub.model.fhir.Identifier;
 import de.samply.reporthub.model.fhir.OperationOutcome;
@@ -46,6 +43,7 @@ public interface Util {
   static Mono<String> prettyPrintJson(Object o) {
     return prettyPrintJson(mapper(), o);
   }
+
   static Mono<String> prettyPrintJson(ObjectMapper mapper, Object o) {
     try {
       return Mono.just(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(o));
