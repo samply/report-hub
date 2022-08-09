@@ -10,6 +10,10 @@ public record Identifier(Optional<String> system, Optional<String> value) implem
     Objects.requireNonNull(value);
   }
 
+  public static Identifier of(String system, String value) {
+    return new Builder().withSystem(system).withValue(value).build();
+  }
+
   public static Builder builder() {
     return new Builder();
   }

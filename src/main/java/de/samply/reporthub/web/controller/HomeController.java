@@ -1,13 +1,12 @@
 package de.samply.reporthub.web.controller;
 
-import static org.springframework.http.HttpStatus.SEE_OTHER;
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED;
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
-import static org.springframework.web.reactive.function.server.ServerResponse.status;
+import static org.springframework.web.reactive.function.server.ServerResponse.seeOther;
 
 import de.samply.reporthub.model.fhir.ActivityDefinition;
 import de.samply.reporthub.model.fhir.Task;
@@ -19,7 +18,6 @@ import de.samply.reporthub.web.model.CreateTaskFormActivityDefinition;
 import de.samply.reporthub.web.model.WebTask;
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,8 +78,7 @@ public class HomeController {
     logger.debug("Create task");
     return request.formData()
         .flatMap(formData -> taskStore.createTask(requestedTask(formData)))
-        .flatMap(task -> status(SEE_OTHER).location(request.uriBuilder().replacePath("/").build())
-            .build());
+        .flatMap(task -> seeOther(request.uriBuilder().replacePath("/").build()).build());
   }
 
   Task requestedTask(MultiValueMap<String, String> formData) {
@@ -102,18 +99,14 @@ public class HomeController {
 
   private Flux<WebTask> tasks(ServerRequest request,
       List<ActivityDefinition> allActivityDefinitions) {
-    Map<String, ActivityDefinition> map = allActivityDefinitions.stream()
+    var map = allActivityDefinitions.stream()
         .filter(activityDefinition -> activityDefinition.url().isPresent())
         .collect(Collectors.toMap(activityDefinition -> activityDefinition.url().orElseThrow(),
             Function.identity()));
-    WebTasksBuilder builder = new WebTasksBuilder(request, map);
-    return taskStore.listAllTasks()
-        //.onErrorResume(e -> Flux.empty())
-        //.delayElements(Duration.ofMillis(1000))
+    var builder = new WebTasksBuilder(request, map);
+    return taskStore.listNewestTasks()
         .map(builder::webTask)
-        .flatMap(Mono::justOrEmpty)
-        // TODO: sort with FHIR when Blaze is able to
-        .sort(Comparator.comparing(WebTask::lastModified, Comparator.reverseOrder()));
+        .flatMap(Mono::justOrEmpty);
   }
 
   private static class WebTasksBuilder extends AbstractWebTasksBuilder {

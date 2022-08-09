@@ -3,6 +3,7 @@ package de.samply.reporthub.util;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public interface Optionals {
@@ -29,6 +30,14 @@ public interface Optionals {
       BiFunction<? super T, ? super U, ? extends R> mapper) {
     Objects.requireNonNull(mapper);
     return optional1.flatMap(v1 -> optional2.map(v2 -> mapper.apply(v1, v2)));
+  }
+
+  static <T, U, R> R orElseGet(Optional<T> optional1, Optional<U> optional2,
+      BiFunction<? super T, ? super U, R> mapper, Supplier<? extends R> orElseGet1,
+      Supplier<? extends R> orElseGet2) {
+    Objects.requireNonNull(mapper);
+    return optional1.map(v1 -> optional2.map(v2 -> mapper.apply(v1, v2)).orElseGet(orElseGet2))
+        .orElseGet(orElseGet1);
   }
 
   /**

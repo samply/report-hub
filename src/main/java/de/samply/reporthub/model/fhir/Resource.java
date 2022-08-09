@@ -10,14 +10,21 @@ import java.util.Optional;
 @JsonSubTypes({
     @Type(ActivityDefinition.class),
     @Type(Bundle.class),
+    @Type(CapabilityStatement.class),
+    @Type(Endpoint.class),
     @Type(Library.class),
     @Type(Measure.class),
     @Type(MeasureReport.class),
+    @Type(MessageHeader.class),
     @Type(OperationOutcome.class),
+    @Type(Organization.class),
+    @Type(Parameters.class),
     @Type(Task.class)})
 public interface Resource {
 
   Optional<String> id();
+
+  Optional<Meta> meta();
 
   default <T extends Resource> Optional<T> cast(Class<T> type) {
     return type.isInstance(this) ? Optional.of(type.cast(this)) : Optional.empty();

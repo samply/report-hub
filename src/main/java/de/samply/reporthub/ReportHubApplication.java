@@ -1,6 +1,6 @@
 package de.samply.reporthub;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
@@ -17,9 +17,6 @@ public class ReportHubApplication {
 
   private static final int TWO_MEGA_BYTE = 2 * 1024 * 1024;
 
-  @Value("${app.beam.proxy.id}")
-  private String beamProxyId;
-
   @Value("${app.beam.appId}")
   private String beamAppId;
 
@@ -34,8 +31,8 @@ public class ReportHubApplication {
   public WebClient beamProxy(@Value("${app.beam.proxy.baseUrl}") String baseUrl) {
     return WebClient.builder()
         .baseUrl(baseUrl)
-        .defaultHeader("Authorization",
-            "ApiKey " + beamAppId + "." + beamProxyId + " " + beamSecret)
+        .defaultHeader("Accept", APPLICATION_JSON_VALUE)
+        .defaultHeader("Authorization", "ApiKey %s %s".formatted(beamAppId, beamSecret))
         .build();
   }
 
@@ -54,7 +51,7 @@ public class ReportHubApplication {
   private static WebClient storeClient(String baseUrl, ObjectMapper mapper) {
     return WebClient.builder()
         .baseUrl(baseUrl)
-        .defaultRequest(request -> request.accept(APPLICATION_JSON))
+        .defaultHeader("Accept", "application/fhir+json")
         .codecs(configurer -> {
           var codecs = configurer.defaultCodecs();
           codecs.maxInMemorySize(TWO_MEGA_BYTE);

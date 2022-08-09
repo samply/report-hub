@@ -15,10 +15,12 @@ import java.util.Optional;
 @JsonDeserialize(builder = Builder.class)
 public record CapabilityStatement(
     Optional<String> id,
+    Optional<Meta> meta,
     Optional<Software> software) implements Resource {
 
   public CapabilityStatement {
     Objects.requireNonNull(id);
+    Objects.requireNonNull(meta);
     Objects.requireNonNull(software);
   }
 
@@ -29,10 +31,16 @@ public record CapabilityStatement(
   public static class Builder {
 
     private String id;
+    private Meta meta;
     private Software software;
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);
+      return this;
+    }
+
+    public Builder withMeta(Meta meta) {
+      this.meta = Objects.requireNonNull(meta);
       return this;
     }
 
@@ -42,7 +50,10 @@ public record CapabilityStatement(
     }
 
     public CapabilityStatement build() {
-      return new CapabilityStatement(Optional.ofNullable(id), Optional.ofNullable(software));
+      return new CapabilityStatement(
+          Optional.ofNullable(id),
+          Optional.ofNullable(meta),
+          Optional.ofNullable(software));
     }
   }
 

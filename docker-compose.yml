@@ -1,7 +1,7 @@
 version: '3.2'
 services:
   task-store:
-    image: "samply/blaze:0.17"
+    image: "samply/blaze:develop"
     environment:
       BASE_URL: "http://localhost:8083"
       JAVA_TOOL_OPTIONS: "-Xmx1g"
@@ -11,7 +11,7 @@ services:
     volumes:
     - "task-store-data:/app/data"
   data-store:
-    image: "samply/blaze:pr-768"
+    image: "samply/blaze:develop"
     environment:
       BASE_URL: "http://localhost:8084"
       JAVA_TOOL_OPTIONS: "-Xmx1g"
@@ -20,6 +20,8 @@ services:
     - "8084:8080"
     volumes:
     - "data-store-data:/app/data"
+    #beam-proxy:
+    #image: "ghcr.io/samply/beam-proxy:develop"
 volumes:
   task-store-data:
   data-store-data:

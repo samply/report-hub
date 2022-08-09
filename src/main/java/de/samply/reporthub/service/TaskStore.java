@@ -2,17 +2,22 @@ package de.samply.reporthub.service;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import de.samply.reporthub.Util;
+import de.samply.reporthub.model.TaskCode;
 import de.samply.reporthub.model.fhir.ActivityDefinition;
 import de.samply.reporthub.model.fhir.Bundle;
 import de.samply.reporthub.model.fhir.CapabilityStatement;
 import de.samply.reporthub.model.fhir.MeasureReport;
+import de.samply.reporthub.model.fhir.Meta;
 import de.samply.reporthub.model.fhir.OperationOutcome;
 import de.samply.reporthub.model.fhir.Resource;
 import de.samply.reporthub.model.fhir.Task;
+import de.samply.reporthub.model.fhir.TaskStatus;
+import de.samply.reporthub.util.Optionals;
 import java.time.Duration;
+import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
-import javax.annotation.PostConstruct;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,30 +26,17 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.retry.Repeat;
+import reactor.util.retry.Retry;
 
 @Service
 public class TaskStore implements Store {
 
   private static final Logger logger = LoggerFactory.getLogger(TaskStore.class);
 
-  public static final String BEAM_TASK_ID_SYSTEM = "https://beam.samply.de/fhir/NamingSysten/taskId";
-
   private final WebClient client;
-
-  private Flux<Task> requestedTasks;
 
   public TaskStore(@Qualifier("taskStoreClient") WebClient client) {
     this.client = Objects.requireNonNull(client);
-  }
-
-  @PostConstruct
-  public void init() {
-    requestedTasks = listAll("/Task?status=requested", Task.class)
-        .doOnError(e -> logger.warn("Error while fetching requested tasks: {}", e.getMessage()))
-        .onErrorResume(e -> Flux.empty())
-        .repeatWhen(Repeat.times(Long.MAX_VALUE).fixedBackoff(Duration.ofSeconds(1)))
-        .share();
   }
 
   public Mono<CapabilityStatement> fetchMetadata() {
@@ -54,6 +46,17 @@ public class TaskStore implements Store {
         .retrieve()
         .bodyToMono(CapabilityStatement.class)
         .doOnError(e -> logger.warn("Error while fetching metadata: {}", e.getMessage()));
+  }
+
+  public <T extends Resource> Mono<T> fetchResource(Class<T> type, String id) {
+    logger.debug("Fetch {} with id: {}", type.getSimpleName(), id);
+    return client.get()
+        .uri("/{type}/{id}", type.getSimpleName(), id)
+        .exchangeToMono(response -> switch (response.statusCode()) {
+          case OK -> response.bodyToMono(type);
+          case NOT_FOUND -> Mono.empty();
+          default -> response.createException().flatMap(Mono::error);
+        });
   }
 
   public Mono<Task> fetchTask(String id) {
@@ -67,16 +70,47 @@ public class TaskStore implements Store {
         });
   }
 
-  public Flux<Task> listAllTasks() {
-    return listAll("/Task", Task.class);
+  public Flux<Task> listNewestTasks() {
+    logger.debug("List newest Tasks");
+    return client.get()
+        .uri(uriBuilder -> uriBuilder.pathSegment("Task")
+            .queryParam("_sort", "-_lastUpdated")
+            .queryParam("_count", "50")
+            .build())
+        .exchangeToFlux(listHandler(Task.class));
   }
 
-  public Flux<Task> requestedTasks(String canonical) {
-    return requestedTasks
-        .filter(task -> Optional.of(canonical).equals(task.instantiatesCanonical()));
+  /**
+   * Lists Tasks with status {@link TaskStatus#READY ready} and the given {@code code}.
+   *
+   * @param code the {@link Task#code() task code} to filter for
+   * @return all Tasks which are currently in ready state and have the given {@code code}
+   */
+  public Flux<Task> listReadyTasks(TaskCode code) {
+    logger.debug("List ready Tasks with code: {}", code.code());
+    return client.get()
+        .uri(uriBuilder -> uriBuilder.pathSegment("Task")
+            .queryParam("status", "ready")
+            .queryParam("code", code.searchToken())
+            .build())
+        .exchangeToFlux(listHandler(Task.class))
+        // TODO: use Retry.filter here to retry only certain errors
+        .retryWhen(Retry.backoff(5, Duration.ofMillis(100)));
+  }
+
+  public Flux<Task> listRequestedTasks() {
+    logger.debug("List requested Tasks.");
+    return client.get()
+        .uri(uriBuilder -> uriBuilder.pathSegment("Task")
+            .queryParam("status", "requested")
+            .build())
+        .exchangeToFlux(listHandler(Task.class))
+        // TODO: use Retry.filter here to retry only certain errors
+        .retryWhen(Retry.backoff(5, Duration.ofMillis(100)));
   }
 
   public Mono<Task> createTask(Task task) {
+    logger.debug("Create Task");
     return client.post()
         .uri("/Task")
         .contentType(APPLICATION_JSON)
@@ -86,14 +120,18 @@ public class TaskStore implements Store {
   }
 
   public Mono<Task> createBeamTask(Task task) {
-    return task.findIdentifierValue(BEAM_TASK_ID_SYSTEM).map(
-        beamTaskId -> client.post()
-            .uri("/Task")
-            .contentType(APPLICATION_JSON)
-            .header("If-None-Exist", "identifier=%s|%s".formatted(BEAM_TASK_ID_SYSTEM, beamTaskId))
-            .bodyValue(task)
-            .retrieve()
-            .bodyToMono(Task.class)
+    return task.findIdentifierValue(Util.BEAM_TASK_ID_SYSTEM).map(
+        beamTaskId -> {
+          logger.debug("Create Beam Task with id: {}", beamTaskId);
+          return client.post()
+              .uri("/Task")
+              .contentType(APPLICATION_JSON)
+              .header("If-None-Exist",
+                  "identifier=%s|%s".formatted(Util.BEAM_TASK_ID_SYSTEM, beamTaskId))
+              .bodyValue(task)
+              .retrieve()
+              .bodyToMono(Task.class);
+        }
     ).orElse(Mono.error(new Exception("Missing Beam ID")));
   }
 
@@ -102,16 +140,22 @@ public class TaskStore implements Store {
    *
    * @param task the Task to update
    * @return the updated Task
+   * @throws NoSuchElementException if the task has no id
    */
   public Mono<Task> updateTask(Task task) {
-    return task.id().map(
-        id -> client.put()
-            .uri("/Task/{id}", id)
-            .contentType(APPLICATION_JSON)
-            .bodyValue(task)
-            .retrieve()
-            .bodyToMono(Task.class)
-    ).orElse(Mono.error(new Exception("Missing Task ID")));
+    return Optionals.orElseGet(task.id(), task.meta().flatMap(Meta::versionId),
+        (id, versionId) -> {
+          logger.debug("Update Task with id `{}` and versionId `{}`", id, versionId);
+          return client.put()
+              .uri("/Task/{id}", id)
+              .contentType(APPLICATION_JSON)
+              .header("If-Match", "W/\"%s\"".formatted(versionId))
+              .bodyValue(task)
+              .retrieve()
+              .bodyToMono(Task.class);
+        },
+        () -> Mono.error(new Exception("Missing Task.id.")),
+        () -> Mono.error(new Exception("Missing Task.meta.versionId.")));
   }
 
   public Flux<Task> fetchTaskHistory(String id) {
@@ -182,20 +226,22 @@ public class TaskStore implements Store {
   }
 
   private <T extends Resource> Flux<T> listAll(String uri, Class<T> type) {
-    return client.get()
-        .uri(uri)
-        .exchangeToFlux(response -> switch (response.statusCode()) {
-          case OK -> response.bodyToFlux(Bundle.class)
-              .flatMapIterable(b -> b.resourcesAs(type).toList());
-          case BAD_REQUEST -> this.<T>badRequest(response,
-              "Error while listing %s".formatted(type.getSimpleName())).flux();
-          case NOT_FOUND -> this.<T>notFound(response,
-              "%s endpoint not found".formatted(type.getSimpleName())).flux();
-          default -> response.createException().flatMap(Mono::<T>error).flux();
-        });
+    return client.get().uri(uri).exchangeToFlux(listHandler(type));
   }
 
-  private <T> Mono<T> badRequest(ClientResponse response, String message) {
+  private <T extends Resource> Function<ClientResponse, Flux<T>> listHandler(Class<T> type) {
+    return response -> switch (response.statusCode()) {
+      case OK -> response.bodyToFlux(Bundle.class)
+          .flatMapIterable(b -> b.resourcesAs(type).toList());
+      case BAD_REQUEST -> TaskStore.<T>badRequest(response,
+          "Error while listing %s".formatted(type.getSimpleName())).flux();
+      case NOT_FOUND -> TaskStore.<T>notFound(response,
+          "%s endpoint not found".formatted(type.getSimpleName())).flux();
+      default -> response.createException().flatMap(Mono::<T>error).flux();
+    };
+  }
+
+  private static <T> Mono<T> badRequest(ClientResponse response, String message) {
     logger.warn(message);
     if (response.headers().contentLength().orElse(0) > 0) {
       return response.bodyToMono(OperationOutcome.class)
@@ -205,7 +251,7 @@ public class TaskStore implements Store {
     }
   }
 
-  private <T> Mono<T> notFound(ClientResponse response, String message) {
+  private static <T> Mono<T> notFound(ClientResponse response, String message) {
     logger.warn(message);
     if (response.headers().contentLength().orElse(0) > 0) {
       return response.bodyToMono(OperationOutcome.class)
@@ -215,7 +261,7 @@ public class TaskStore implements Store {
     }
   }
 
-  private <T> Mono<T> resourceNotFound(ClientResponse response, String type, String id) {
+  private static <T> Mono<T> resourceNotFound(ClientResponse response, String type, String id) {
     logger.warn("%s with id `%s` was not found.".formatted(type, id));
     return response.releaseBody().then(Mono.error(new ResourceNotFoundException(type, id)));
   }

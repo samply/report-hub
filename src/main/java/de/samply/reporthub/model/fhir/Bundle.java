@@ -10,21 +10,46 @@ import de.samply.reporthub.model.fhir.Bundle.Builder;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 @JsonInclude(Include.NON_EMPTY)
 @JsonTypeInfo(use = Id.NAME, property = "resourceType")
 @JsonDeserialize(builder = Builder.class)
-public record Bundle(Optional<String> id, Code type, List<Entry> entry) implements Resource {
+public record Bundle(
+    Optional<String> id,
+    Optional<Meta> meta,
+    Code type,
+    List<Entry> entry) implements Resource {
 
   public Bundle {
     Objects.requireNonNull(id);
+    Objects.requireNonNull(meta);
     Objects.requireNonNull(type);
     Objects.requireNonNull(entry);
   }
 
+  public <T extends Resource> Optional<T> findFirstResource(Class<T> type) {
+    return entry.isEmpty() ? Optional.empty() : entry.get(0).resourceAs(type);
+  }
+
+  public Optional<Entry> findFirstEntry(Predicate<Entry> predicate) {
+    return entry.stream().filter(predicate).findFirst();
+  }
+
+  public <T extends Resource> Optional<T> resolveResource(Class<T> type, Reference reference) {
+    return reference.reference()
+        .flatMap(ref -> findFirstEntry(e -> e.fullUrl.stream().anyMatch(uri -> uri.hasValue(ref))))
+        .flatMap(e -> e.resourceAs(type));
+  }
+
   public <T extends Resource> Stream<T> resourcesAs(Class<T> type) {
     return entry.stream().map(e -> e.resourceAs(type)).flatMap(Optional::stream);
+  }
+
+  public static <T extends Resource> Predicate<Bundle> hasFirstResource(Class<T> type,
+      Predicate<T> predicate) {
+    return bundle -> bundle.findFirstResource(type).stream().anyMatch(predicate);
   }
 
   public static Builder builder(Code type) {
@@ -34,6 +59,7 @@ public record Bundle(Optional<String> id, Code type, List<Entry> entry) implemen
   public static class Builder {
 
     private String id;
+    private Meta meta;
     private Code type;
     private List<Entry> entry;
 
@@ -49,6 +75,11 @@ public record Bundle(Optional<String> id, Code type, List<Entry> entry) implemen
       return this;
     }
 
+    public Builder withMeta(Meta meta) {
+      this.meta = Objects.requireNonNull(meta);
+      return this;
+    }
+
     public Builder withType(Code type) {
       this.type = Objects.requireNonNull(type);
       return this;
@@ -60,18 +91,24 @@ public record Bundle(Optional<String> id, Code type, List<Entry> entry) implemen
     }
 
     public Bundle build() {
-      return new Bundle(Optional.ofNullable(id), type, Util.copyOfNullable(entry));
+      return new Bundle(
+          Optional.ofNullable(id),
+          Optional.ofNullable(meta),
+          type,
+          Util.copyOfNullable(entry));
     }
   }
 
   @JsonInclude(Include.NON_EMPTY)
   @JsonDeserialize(builder = Entry.Builder.class)
   public record Entry(
+      Optional<Uri> fullUrl,
       Optional<Resource> resource,
       Optional<Request> request,
       Optional<Response> response) implements BackboneElement {
 
     public Entry {
+      Objects.requireNonNull(fullUrl);
       Objects.requireNonNull(resource);
       Objects.requireNonNull(request);
       Objects.requireNonNull(response);
@@ -87,9 +124,15 @@ public record Bundle(Optional<String> id, Code type, List<Entry> entry) implemen
 
     public static class Builder {
 
+      private Uri fullUrl;
       private Resource resource;
       private Request request;
       private Response response;
+
+      public Builder withFullUrl(Uri fullUrl) {
+        this.fullUrl = Objects.requireNonNull(fullUrl);
+        return this;
+      }
 
       public Builder withResource(Resource resource) {
         this.resource = Objects.requireNonNull(resource);
@@ -108,6 +151,7 @@ public record Bundle(Optional<String> id, Code type, List<Entry> entry) implemen
 
       public Entry build() {
         return new Entry(
+            Optional.ofNullable(fullUrl),
             Optional.ofNullable(resource),
             Optional.ofNullable(request),
             Optional.ofNullable(response));

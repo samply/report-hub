@@ -57,4 +57,29 @@ class BundleTest {
     assertThat(bundle.type().value()).contains("transaction");
     assertThat(bundle.entry().get(0).response().map(Response::status)).contains("200");
   }
+
+  @Test
+  void deserialize_oneMessageHeader() {
+    var bundle = Util.parseJson("""
+        {
+          "resourceType": "Bundle",
+          "type": "message",
+          "entry": [{
+            "resource": {
+              "resourceType": "MessageHeader",
+              "eventCoding" : {
+                "system" : "https://dktk.dkfz.de/fhir/CodeSystem/message-event",
+                "code" : "evaluate-measure"
+              }
+            }
+          }]
+        }
+        """, Bundle.class).block();
+
+    assertThat(bundle).isNotNull();
+    assertThat(bundle.type().value()).contains("message");
+    assertThat(bundle.resourcesAs(MessageHeader.class).findFirst().map(MessageHeader::eventCoding)
+        .flatMap(Coding::code).flatMap(Code::value))
+        .contains("evaluate-measure");
+  }
 }

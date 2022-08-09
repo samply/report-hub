@@ -17,6 +17,7 @@ import java.util.Optional;
 @JsonDeserialize(builder = Builder.class)
 public record Library(
     Optional<String> id,
+    Optional<Meta> meta,
     Optional<String> url,
     Optional<String> name,
     Code status,
@@ -25,8 +26,14 @@ public record Library(
     List<Attachment> content) implements Resource {
 
   public Library {
+    Objects.requireNonNull(id);
+    Objects.requireNonNull(meta);
+    Objects.requireNonNull(url);
+    Objects.requireNonNull(name);
     Objects.requireNonNull(status);
     Objects.requireNonNull(type);
+    Objects.requireNonNull(subjectCodeableConcept);
+    Objects.requireNonNull(content);
   }
 
   public Library addContent(Attachment content) {
@@ -42,6 +49,7 @@ public record Library(
   public static class Builder {
 
     private String id;
+    private Meta meta;
     private String url;
     private String name;
     private Code status;
@@ -64,6 +72,11 @@ public record Library(
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);
+      return this;
+    }
+
+    public Builder withMeta(Meta meta) {
+      this.meta = Objects.requireNonNull(meta);
       return this;
     }
 
@@ -99,6 +112,7 @@ public record Library(
 
     public Library build() {
       return new Library(Optional.ofNullable(id),
+          Optional.ofNullable(meta),
           Optional.ofNullable(url),
           Optional.ofNullable(name),
           status,

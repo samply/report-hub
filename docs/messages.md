@@ -29,7 +29,7 @@
         "parameter": [
           {
             "name": "measure",
-            "value": "https://dktk.dkfz.de/fhir/Measure/exliquid-dashboard"
+            "valueCanonical": "https://dktk.dkfz.de/fhir/Measure/exliquid-dashboard"
           }
         ]
       }

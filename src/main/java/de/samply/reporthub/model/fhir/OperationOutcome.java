@@ -14,10 +14,14 @@ import java.util.Optional;
 @JsonInclude(Include.NON_EMPTY)
 @JsonTypeInfo(use = Id.NAME, property = "resourceType")
 @JsonDeserialize(builder = Builder.class)
-public record OperationOutcome(Optional<String> id, List<Issue> issue) implements Resource {
+public record OperationOutcome(
+    Optional<String> id,
+    Optional<Meta> meta,
+    List<Issue> issue) implements Resource {
 
   public OperationOutcome {
     Objects.requireNonNull(id);
+    Objects.requireNonNull(meta);
     Objects.requireNonNull(issue);
   }
 
@@ -28,10 +32,16 @@ public record OperationOutcome(Optional<String> id, List<Issue> issue) implement
   public static class Builder {
 
     private String id;
+    private Meta meta;
     private List<Issue> issues;
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);
+      return this;
+    }
+
+    public Builder withMeta(Meta meta) {
+      this.meta = Objects.requireNonNull(meta);
       return this;
     }
 
@@ -41,7 +51,10 @@ public record OperationOutcome(Optional<String> id, List<Issue> issue) implement
     }
 
     public OperationOutcome build() {
-      return new OperationOutcome(Optional.ofNullable(id), Util.copyOfNullable(issues));
+      return new OperationOutcome(
+          Optional.ofNullable(id),
+          Optional.ofNullable(meta),
+          Util.copyOfNullable(issues));
     }
   }
 

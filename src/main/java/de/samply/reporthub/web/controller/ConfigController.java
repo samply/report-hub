@@ -45,10 +45,10 @@ public class ConfigController {
 
   @Bean
   public RouterFunction<ServerResponse> configRouter() {
-    return route(GET("config"), this::handler);
+    return route(GET("config"), this::handle);
   }
 
-  public Mono<ServerResponse> handler(ServerRequest request) {
+  public Mono<ServerResponse> handle(ServerRequest request) {
     logger.debug("Request config page");
     return model().flatMap(model -> ok().render("config", model));
   }

@@ -11,6 +11,7 @@ import de.samply.reporthub.model.fhir.CapabilityStatement;
 import de.samply.reporthub.model.fhir.Library;
 import de.samply.reporthub.model.fhir.Measure;
 import de.samply.reporthub.model.fhir.MeasureReport;
+import de.samply.reporthub.model.fhir.Resource;
 import java.time.Duration;
 import java.util.List;
 import org.slf4j.Logger;
@@ -39,6 +40,17 @@ public class DataStore implements Store {
         .retrieve()
         .bodyToMono(CapabilityStatement.class)
         .doOnError(e -> logger.warn("Error while fetching metadata: {}", e.getMessage()));
+  }
+
+  public <T extends Resource> Mono<T> fetchResource(Class<T> type, String id) {
+    logger.debug("Fetch {} with id: {}", type.getSimpleName(), id);
+    return client.get()
+        .uri("/{type}/{id}", type.getSimpleName(), id)
+        .exchangeToMono(response -> switch (response.statusCode()) {
+          case OK -> response.bodyToMono(type);
+          case NOT_FOUND -> Mono.empty();
+          default -> response.createException().flatMap(Mono::error);
+        });
   }
 
   public Mono<MeasureReport> evaluateMeasure(String url) {

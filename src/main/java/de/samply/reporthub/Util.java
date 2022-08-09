@@ -3,40 +3,32 @@ package de.samply.reporthub;
 import static com.fasterxml.jackson.databind.DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
-import static de.samply.reporthub.service.TaskStore.BEAM_TASK_ID_SYSTEM;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.samply.reporthub.model.fhir.Identifier;
-import de.samply.reporthub.model.fhir.OperationOutcome;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import java.util.UUID;
 import reactor.core.publisher.Mono;
 
 public interface Util {
 
-  static Identifier beamTaskIdentifier(String id) {
-    return Identifier.builder().withSystem(BEAM_TASK_ID_SYSTEM).withValue(id).build();
+  String BEAM_TASK_ID_SYSTEM = "https://beam.samply.de/fhir/NamingSysten/taskId";
+
+  static Identifier beamTaskIdentifier(UUID id) {
+    return Identifier.builder().withSystem(BEAM_TASK_ID_SYSTEM).withValue(id.toString()).build();
   }
 
   static <T> Mono<T> parseJson(String s, Class<T> type) {
     try {
       return Mono.just(mapper().readValue(s, type));
     } catch (JsonProcessingException e) {
-      return Mono.error(e);
-    }
-  }
-
-  static <T> Mono<T> parseJson(String s, TypeReference<T> type) {
-    try {
-      return Mono.just(mapper().readValue(s, type));
-    } catch (JsonProcessingException e) {
-      return Mono.error(e);
+      return Mono.error(new Exception("Error while parsing a %s: %s".formatted(type.getSimpleName(),
+          e.getMessage()), e));
     }
   }
 
@@ -66,12 +58,14 @@ public interface Util {
     return coll == null ? List.of() : List.copyOf(coll);
   }
 
-  static Mono<OperationOutcome> operationOutcome(WebClientResponseException e) {
-    return parseJson(e.getResponseBodyAsString(), OperationOutcome.class);
-  }
-
   static Optional<String> referenceId(String reference) {
     String[] strings = reference.split("/", 2);
     return strings.length == 2 ? Optional.of(strings[1]) : Optional.empty();
+  }
+
+  static void checkArgument(boolean expression, String errorMessage) {
+    if (!expression) {
+      throw new IllegalArgumentException(errorMessage);
+    }
   }
 }

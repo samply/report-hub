@@ -10,10 +10,10 @@ class MeasureTest {
   @Test
   void deserialize() {
     var measure = Util.parseJson("""
-        {"resourceType": "Measure", "name": "foo"}
+        {"resourceType": "Measure", "status": "draft"}
         """, Measure.class).block();
 
     assertThat(measure).isNotNull();
-    assertThat(measure.name()).contains("foo");
+    assertThat(measure.status().value()).contains("draft");
   }
 }

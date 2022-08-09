@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.OK;
 
 import de.samply.reporthub.exliquid.web.model.Report;
-import de.samply.reporthub.model.fhir.Code;
 import de.samply.reporthub.model.fhir.CodeableConcept;
 import de.samply.reporthub.model.fhir.Coding;
 import de.samply.reporthub.model.fhir.MeasureReport;
@@ -22,6 +21,8 @@ import de.samply.reporthub.model.fhir.MeasureReport.Group.Population;
 import de.samply.reporthub.model.fhir.MeasureReport.Group.Stratifier;
 import de.samply.reporthub.model.fhir.MeasureReport.Group.Stratifier.Stratum;
 import de.samply.reporthub.model.fhir.MeasureReport.Group.Stratifier.Stratum.Component;
+import de.samply.reporthub.model.fhir.MeasureReportStatus;
+import de.samply.reporthub.model.fhir.MeasureReportType;
 import de.samply.reporthub.service.ResourceNotFoundException;
 import de.samply.reporthub.service.TaskStore;
 import de.samply.reporthub.util.IntPair;
@@ -53,12 +54,14 @@ class ReportControllerTest {
       CodeableConcept.of(Coding.of(EXLIQUID_STRATIFIER, "sample-diagnosis"));
   private static final CodeableConcept SAMPLE_TYPE_STRATIFIER_CODE =
       CodeableConcept.of(Coding.of(EXLIQUID_STRATIFIER, "sample-type"));
-  private static final Code DRAFT = Code.valueOf("draft");
-  private static final Code INDIVIDUAL = Code.valueOf("individual");
-  private static final MeasureReport EMPTY_MEASURE_REPORT =
-      MeasureReport.builder(DRAFT, INDIVIDUAL, "foo").build();
-  private static final MeasureReport MINIMAL_MEASURE_REPORT = MeasureReport.builder(DRAFT,
-          INDIVIDUAL,
+  private static final MeasureReport EMPTY_MEASURE_REPORT = MeasureReport.builder(
+          MeasureReportStatus.COMPLETE.code(),
+          MeasureReportType.INDIVIDUAL.code(),
+          "foo")
+      .build();
+  private static final MeasureReport MINIMAL_MEASURE_REPORT = MeasureReport.builder(
+          MeasureReportStatus.COMPLETE.code(),
+          MeasureReportType.INDIVIDUAL.code(),
           "foo")
       .withDate(OffsetDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC))
       .withGroup(List.of(
@@ -142,7 +145,8 @@ class ReportControllerTest {
 
   @Test
   void convert_full() {
-    var measureReport = MeasureReport.builder(DRAFT, INDIVIDUAL,
+    var measureReport = MeasureReport.builder(MeasureReportStatus.COMPLETE.code(),
+            MeasureReportType.INDIVIDUAL.code(),
             "foo")
         .withDate(OffsetDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC))
         .withGroup(List.of(

@@ -1,9 +1,9 @@
 package de.samply.reporthub.service;
 
+import static de.samply.reporthub.Util.BEAM_TASK_ID_SYSTEM;
 import static de.samply.reporthub.model.fhir.PublicationStatus.UNKNOWN;
 import static de.samply.reporthub.model.fhir.TaskStatus.DRAFT;
 import static de.samply.reporthub.model.fhir.TaskStatus.REQUESTED;
-import static de.samply.reporthub.service.TaskStore.BEAM_TASK_ID_SYSTEM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
@@ -36,7 +36,7 @@ class TaskStoreContainerTest {
 
   private static final Logger logger = LoggerFactory.getLogger(TaskStoreContainerTest.class);
 
-  private static final String BEAM_TASK_ID = "6db99ca6-0d0b-4ec9-9657-7b51ca3977fa";
+  private static final UUID BEAM_TASK_ID = UUID.fromString("6db99ca6-0d0b-4ec9-9657-7b51ca3977fa");
   private static final Identifier BEAM_TASK_IDENTIFIER = Util.beamTaskIdentifier(BEAM_TASK_ID);
   private static final OffsetDateTime DATE_TIME = OffsetDateTime.parse("2022-07-20T21:21:01+02:00");
 
@@ -48,7 +48,6 @@ class TaskStoreContainerTest {
       .withExposedPorts(8080)
       .waitingFor(Wait.forHttp("/health").forStatusCode(200))
       .withLogConsumer(new Slf4jLogConsumer(logger));
-
 
   private TaskStore taskStore;
 
@@ -88,7 +87,7 @@ class TaskStoreContainerTest {
 
   @Test
   void createTask_draft() {
-    var taskId = UUID.randomUUID().toString();
+    var taskId = UUID.randomUUID();
     var taskToCreate = Task.builder(DRAFT.code())
         .withIdentifier(List.of(Util.beamTaskIdentifier(taskId)))
         .build();
@@ -97,13 +96,13 @@ class TaskStoreContainerTest {
 
     assertThat(task).isNotNull();
     assertThat(task.id()).isPresent();
-    assertThat(task.findIdentifierValue(BEAM_TASK_ID_SYSTEM)).contains(taskId);
+    assertThat(task.findIdentifierValue(BEAM_TASK_ID_SYSTEM)).contains(taskId.toString());
     assertThat(task.status().value()).as("task status").contains("draft");
   }
 
   @Test
   void createTask_requested() {
-    var beamId = UUID.randomUUID().toString();
+    var beamId = UUID.randomUUID();
     var taskToCreate = Task.builder(REQUESTED.code())
         .withIdentifier(List.of(Util.beamTaskIdentifier(beamId)))
         .build();
@@ -112,7 +111,7 @@ class TaskStoreContainerTest {
 
     assertThat(task).isNotNull();
     assertThat(task.id()).isPresent();
-    assertThat(task.findIdentifierValue(BEAM_TASK_ID_SYSTEM)).contains(beamId);
+    assertThat(task.findIdentifierValue(BEAM_TASK_ID_SYSTEM)).contains(beamId.toString());
     assertThat(task.status().value()).as("task status").contains("requested");
   }
 

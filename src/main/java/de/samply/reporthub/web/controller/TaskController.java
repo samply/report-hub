@@ -4,6 +4,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 
+import de.samply.reporthub.model.TaskOutput;
 import de.samply.reporthub.model.fhir.ActivityDefinition;
 import de.samply.reporthub.model.fhir.CodeableConcept;
 import de.samply.reporthub.model.fhir.Task;
@@ -33,8 +34,8 @@ public class TaskController {
 
   private static final Logger logger = LoggerFactory.getLogger(TaskController.class);
 
-  public static final Predicate<CodeableConcept> REPORT_PREDICATE = CodeableConcept.containsCoding(
-      "https://dktk.dkfz.de/fhir/CodeSystem/exliquid-task-output", "measure-report");
+  public static final Predicate<CodeableConcept> REPORT_PREDICATE =
+      CodeableConcept.containsCoding(TaskOutput.MEASURE_REPORT);
 
   private final TaskStore taskStore;
 
@@ -54,7 +55,7 @@ public class TaskController {
 
   Mono<ServerResponse> handle(ServerRequest request) {
     String id = request.pathVariable("id");
-    logger.debug("Request Task with id = {}", id);
+    logger.debug("Request Task with id: {}", id);
     return webTask(request, id)
         .flatMap(task -> ok().render("task", Map.of("task", task)))
         .onErrorResume(ResourceNotFoundException.class, TaskController::notFound);

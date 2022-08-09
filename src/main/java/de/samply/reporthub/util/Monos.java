@@ -18,4 +18,10 @@ public interface Monos {
     Objects.requireNonNull(mapper);
     return mono1.flatMap(v1 -> mono2.apply(v1).map(v2 -> mapper.apply(v1, v2)));
   }
+
+  static <T, U, R> Mono<R> flatMap(Mono<T> mono1, Mono<U> mono2,
+      BiFunction<? super T, ? super U, ? extends Mono<? extends R>> mapper) {
+    Objects.requireNonNull(mapper);
+    return mono1.flatMap(v1 -> mono2.flatMap(v2 -> mapper.apply(v1, v2)));
+  }
 }

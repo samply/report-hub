@@ -17,6 +17,7 @@ import java.util.function.Predicate;
 @JsonDeserialize(builder = Builder.class)
 public record Measure(
     Optional<String> id,
+    Optional<Meta> meta,
     Optional<String> url,
     Optional<String> name,
     Code status,
@@ -24,6 +25,18 @@ public record Measure(
     List<String> library,
     Optional<CodeableConcept> scoring,
     List<Group> group) implements Resource {
+
+  public Measure {
+    Objects.requireNonNull(id);
+    Objects.requireNonNull(meta);
+    Objects.requireNonNull(url);
+    Objects.requireNonNull(name);
+    Objects.requireNonNull(status);
+    Objects.requireNonNull(subjectCodeableConcept);
+    Objects.requireNonNull(library);
+    Objects.requireNonNull(scoring);
+    Objects.requireNonNull(group);
+  }
 
   /**
    * Finds the {@link Group} where {@code codePredicate} matches on {@link Group#code}.
@@ -43,6 +56,7 @@ public record Measure(
   public static class Builder {
 
     private String id;
+    private Meta meta;
     private String url;
     private String name;
     private Code status;
@@ -53,6 +67,11 @@ public record Measure(
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);
+      return this;
+    }
+
+    public Builder withMeta(Meta meta) {
+      this.meta = Objects.requireNonNull(meta);
       return this;
     }
 
@@ -93,6 +112,7 @@ public record Measure(
 
     public Measure build() {
       return new Measure(Optional.ofNullable(id),
+          Optional.ofNullable(meta),
           Optional.ofNullable(url),
           Optional.ofNullable(name),
           status,

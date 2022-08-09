@@ -11,8 +11,8 @@ import java.util.function.Predicate;
 @JsonInclude(Include.NON_EMPTY)
 public record CodeableConcept(List<Coding> coding, Optional<String> text) implements Element {
 
-  public boolean containsCoding(Predicate<Coding> predicate) {
-    return coding.stream().anyMatch(predicate);
+  public static Predicate<CodeableConcept> containsCoding(Predicate<Coding> predicate) {
+    return codeableConcept -> codeableConcept.coding.stream().anyMatch(predicate);
   }
 
   /**
@@ -24,8 +24,7 @@ public record CodeableConcept(List<Coding> coding, Optional<String> text) implem
    * @return a predicate
    */
   public static Predicate<CodeableConcept> containsCoding(String systemValue, String codeValue) {
-    var pred = Coding.hasSystemValue(systemValue).and(Coding.hasCodeValue(codeValue));
-    return codeableConcept -> codeableConcept.containsCoding(pred);
+    return containsCoding(Coding.hasSystemValue(systemValue).and(Coding.hasCodeValue(codeValue)));
   }
 
   public static CodeableConcept of(Coding coding) {

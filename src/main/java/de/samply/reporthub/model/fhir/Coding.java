@@ -21,8 +21,16 @@ public record Coding(Optional<Uri> system, Optional<Code> code) implements Eleme
     return coding -> coding.system.map(system -> system.hasValue(systemValue)).orElse(false);
   }
 
+  public boolean hasSystemValue1(String systemValue) {
+    return system.map(system -> system.hasValue(systemValue)).orElse(false);
+  }
+
   public static Predicate<Coding> hasCodeValue(String codeValue) {
     return coding -> coding.code.map(code -> code.hasValue(codeValue)).orElse(false);
+  }
+
+  public boolean hasCodeValue1(String codeValue) {
+    return code.map(code -> code.hasValue(codeValue)).orElse(false);
   }
 
   public static Coding of(String systemValue, String codeValue) {

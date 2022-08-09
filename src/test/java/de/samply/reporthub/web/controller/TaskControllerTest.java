@@ -91,7 +91,7 @@ class TaskControllerTest {
         .hasStatusCode(OK)
         .isRendering()
         .hasName("404")
-        .containsModelEntry("error", "The task with id `%s` was not found.".formatted(TASK_ID));
+        .containsModelEntry("error", "The Task with id `%s` was not found.".formatted(TASK_ID));
   }
 
   @Test

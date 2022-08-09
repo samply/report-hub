@@ -24,7 +24,7 @@ class AbstractWebTasksBuilder {
   }
 
   private Link activityDefinitionLink(String id, String title) {
-    return new Link(request.uriBuilder().path("activity-definition/{id}").build(id), title);
+    return new Link(request.uriBuilder().replacePath("activity-definition/{id}").build(id), title);
   }
 
   Optional<Link> reportLink(Output output) {
@@ -35,6 +35,6 @@ class AbstractWebTasksBuilder {
   }
 
   private Link reportLink(String id) {
-    return new Link(request.uriBuilder().path("exliquid-report/{id}").build(id), "Report");
+    return new Link(request.uriBuilder().replacePath("exliquid-report/{id}").build(id), "Report");
   }
 }

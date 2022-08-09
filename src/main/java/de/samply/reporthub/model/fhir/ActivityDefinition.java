@@ -14,12 +14,14 @@ import java.util.Optional;
 @JsonDeserialize(builder = Builder.class)
 public record ActivityDefinition(
     Optional<String> id,
+    Optional<Meta> meta,
     Optional<String> url,
     Optional<String> title,
     Code status) implements Resource {
 
   public ActivityDefinition {
     Objects.requireNonNull(id);
+    Objects.requireNonNull(meta);
     Objects.requireNonNull(url);
     Objects.requireNonNull(title);
     Objects.requireNonNull(status);
@@ -32,6 +34,7 @@ public record ActivityDefinition(
   public static class Builder {
 
     private String id;
+    private Meta meta;
     private String url;
     private String title;
     private Code status;
@@ -45,6 +48,11 @@ public record ActivityDefinition(
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);
+      return this;
+    }
+
+    public Builder withMeta(Meta meta) {
+      this.meta = Objects.requireNonNull(meta);
       return this;
     }
 
@@ -66,6 +74,7 @@ public record ActivityDefinition(
     public ActivityDefinition build() {
       return new ActivityDefinition(
           Optional.ofNullable(id),
+          Optional.ofNullable(meta),
           Optional.ofNullable(url),
           Optional.ofNullable(title),
           status);

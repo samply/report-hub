@@ -18,6 +18,7 @@ import java.util.function.Predicate;
 @JsonDeserialize(builder = Builder.class)
 public record MeasureReport(
     Optional<String> id,
+    Optional<Meta> meta,
     Code status,
     Code type,
     String measure,
@@ -26,11 +27,16 @@ public record MeasureReport(
 
   public MeasureReport {
     Objects.requireNonNull(id);
+    Objects.requireNonNull(meta);
     Objects.requireNonNull(status);
     Objects.requireNonNull(type);
     Objects.requireNonNull(measure);
     Objects.requireNonNull(date);
     Objects.requireNonNull(group);
+  }
+
+  public MeasureReport withId(String id) {
+    return new Builder(this).withId(id).build();
   }
 
   /**
@@ -51,6 +57,7 @@ public record MeasureReport(
   public static class Builder {
 
     private String id;
+    private Meta meta;
     private Code status;
     private Code type;
     private String measure;
@@ -66,8 +73,22 @@ public record MeasureReport(
       this.measure = Objects.requireNonNull(measure);
     }
 
+    private Builder(MeasureReport measureReport) {
+      this.id = measureReport.id.orElse(null);
+      this.status = measureReport.status;
+      this.type = measureReport.type;
+      this.measure = measureReport.measure;
+      this.date = measureReport.date.orElse(null);
+      this.group = measureReport.group;
+    }
+
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);
+      return this;
+    }
+
+    public Builder withMeta(Meta meta) {
+      this.meta = Objects.requireNonNull(meta);
       return this;
     }
 
@@ -99,6 +120,7 @@ public record MeasureReport(
     public MeasureReport build() {
       return new MeasureReport(
           Optional.ofNullable(id),
+          Optional.ofNullable(meta),
           status,
           type,
           measure,

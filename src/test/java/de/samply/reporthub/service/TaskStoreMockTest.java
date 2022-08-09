@@ -66,7 +66,7 @@ public class TaskStoreMockTest {
   void listAllTasks_404() {
     server.enqueue(new MockResponse().setResponseCode(404));
 
-    var result = taskStore.listAllTasks();
+    var result = taskStore.listNewestTasks();
 
     StepVerifier.create(result)
         .expectErrorSatisfies(new NotFoundAssert("Task endpoint not found"))
@@ -77,7 +77,7 @@ public class TaskStoreMockTest {
   void listAllTasks_connectionRefused() throws IOException {
     server.shutdown();
 
-    var result = taskStore.listAllTasks();
+    var result = taskStore.listNewestTasks();
 
     StepVerifier.create(result).expectError(WebClientRequestException.class).verify();
   }
