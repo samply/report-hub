@@ -20,6 +20,7 @@ public record MessageHeader(
     Optional<Meta> meta,
     Coding eventCoding,
     List<Destination> destination,
+    Optional<Response> response,
     List<Reference> focus) implements Resource {
 
   public MessageHeader {
@@ -47,6 +48,7 @@ public record MessageHeader(
     private Meta meta;
     private Coding eventCoding;
     private List<Destination> destination;
+    private Response response;
     private List<Reference> focus;
 
     public Builder() {
@@ -76,6 +78,11 @@ public record MessageHeader(
       return this;
     }
 
+    public Builder withResponse(Response response) {
+      this.response = Objects.requireNonNull(response);
+      return this;
+    }
+
     public Builder withFocus(List<Reference> focus) {
       this.focus = focus;
       return this;
@@ -87,6 +94,7 @@ public record MessageHeader(
           Optional.ofNullable(meta),
           eventCoding,
           Util.copyOfNullable(destination),
+          Optional.ofNullable(response),
           Util.copyOfNullable(focus));
     }
   }
@@ -95,6 +103,18 @@ public record MessageHeader(
 
     public Destination {
       Objects.requireNonNull(endpoint);
+    }
+  }
+
+  public record Response(String identifier, Code code) {
+
+    public Response {
+      Objects.requireNonNull(identifier);
+      Objects.requireNonNull(code);
+    }
+
+    public static Response of(String identifier, Code code) {
+      return new Response(identifier, code);
     }
   }
 }

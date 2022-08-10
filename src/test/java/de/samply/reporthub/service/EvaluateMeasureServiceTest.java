@@ -43,7 +43,7 @@ class EvaluateMeasureServiceTest {
   private static final MeasureReport MEASURE_REPORT = MeasureReport.builder(
           MeasureReportStatus.COMPLETE.code(),
           MeasureReportType.SUMMARY.code(),
-          MEASURE_URL)
+          Canonical.valueOf(MEASURE_URL))
       .build();
 
   @Mock

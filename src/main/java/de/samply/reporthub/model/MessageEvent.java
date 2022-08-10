@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 public enum MessageEvent implements Predicate<Coding> {
 
   EVALUATE_MEASURE("evaluate-measure"),
+  EVALUATE_MEASURE_RESPONSE("evaluate-measure-response"),
   FULFILL_TASK("fulfill-task");
 
   public static final String CODE_SYSTEM_URL = "https://dktk.dkfz.de/fhir/CodeSystem/message-event";

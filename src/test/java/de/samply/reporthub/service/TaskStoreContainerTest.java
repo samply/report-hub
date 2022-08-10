@@ -9,10 +9,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.ActivityDefinition;
+import de.samply.reporthub.model.fhir.Canonical;
 import de.samply.reporthub.model.fhir.CapabilityStatement.Software;
 import de.samply.reporthub.model.fhir.Code;
 import de.samply.reporthub.model.fhir.Identifier;
 import de.samply.reporthub.model.fhir.MeasureReport;
+import de.samply.reporthub.model.fhir.MeasureReportStatus;
 import de.samply.reporthub.model.fhir.Task;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -183,8 +185,8 @@ class TaskStoreContainerTest {
 
   @Test
   void createMeasureReport() {
-    var measureReportToCreate = MeasureReport.builder(Code.valueOf("draft"),
-            Code.valueOf("individual"), "foo")
+    var measureReportToCreate = MeasureReport.builder(MeasureReportStatus.COMPLETE.code(),
+            Code.valueOf("individual"), Canonical.valueOf("foo"))
         .withDate(DATE_TIME)
         .build();
 
@@ -192,7 +194,7 @@ class TaskStoreContainerTest {
 
     assertThat(measureReport).isNotNull();
     assertThat(measureReport.id()).isPresent();
-    assertThat(measureReport.status().value()).contains("draft");
+    assertThat(measureReport.status().value()).contains("complete");
     assertThat(measureReport.type().value()).contains("individual");
     assertThat(measureReport.date()).contains(DATE_TIME);
   }

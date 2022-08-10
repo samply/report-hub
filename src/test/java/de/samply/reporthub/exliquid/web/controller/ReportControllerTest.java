@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.OK;
 
 import de.samply.reporthub.exliquid.web.model.Report;
+import de.samply.reporthub.model.fhir.Canonical;
 import de.samply.reporthub.model.fhir.CodeableConcept;
 import de.samply.reporthub.model.fhir.Coding;
 import de.samply.reporthub.model.fhir.MeasureReport;
@@ -57,12 +58,12 @@ class ReportControllerTest {
   private static final MeasureReport EMPTY_MEASURE_REPORT = MeasureReport.builder(
           MeasureReportStatus.COMPLETE.code(),
           MeasureReportType.INDIVIDUAL.code(),
-          "foo")
+          Canonical.valueOf("foo"))
       .build();
   private static final MeasureReport MINIMAL_MEASURE_REPORT = MeasureReport.builder(
           MeasureReportStatus.COMPLETE.code(),
           MeasureReportType.INDIVIDUAL.code(),
-          "foo")
+          Canonical.valueOf("foo"))
       .withDate(OffsetDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC))
       .withGroup(List.of(
           Group.builder()
@@ -146,8 +147,8 @@ class ReportControllerTest {
   @Test
   void convert_full() {
     var measureReport = MeasureReport.builder(MeasureReportStatus.COMPLETE.code(),
-            MeasureReportType.INDIVIDUAL.code(),
-            "foo")
+            MeasureReportType.SUMMARY.code(),
+            Canonical.valueOf("foo"))
         .withDate(OffsetDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC))
         .withGroup(List.of(
             Group.builder()

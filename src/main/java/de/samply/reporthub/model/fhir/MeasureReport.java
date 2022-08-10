@@ -21,8 +21,9 @@ public record MeasureReport(
     Optional<Meta> meta,
     Code status,
     Code type,
-    String measure,
+    Canonical measure,
     Optional<OffsetDateTime> date,
+    Optional<Period> period,
     List<Group> group) implements Resource {
 
   public MeasureReport {
@@ -32,6 +33,7 @@ public record MeasureReport(
     Objects.requireNonNull(type);
     Objects.requireNonNull(measure);
     Objects.requireNonNull(date);
+    Objects.requireNonNull(period);
     Objects.requireNonNull(group);
   }
 
@@ -50,7 +52,7 @@ public record MeasureReport(
     return group.stream().filter(g -> g.code.stream().anyMatch(codePredicate)).findFirst();
   }
 
-  public static Builder builder(Code status, Code type, String measure) {
+  public static Builder builder(Code status, Code type, Canonical measure) {
     return new Builder(status, type, measure);
   }
 
@@ -60,14 +62,15 @@ public record MeasureReport(
     private Meta meta;
     private Code status;
     private Code type;
-    private String measure;
+    private Canonical measure;
     private OffsetDateTime date;
+    private Period period;
     private List<Group> group;
 
     public Builder() {
     }
 
-    private Builder(Code status, Code type, String measure) {
+    private Builder(Code status, Code type, Canonical measure) {
       this.status = Objects.requireNonNull(status);
       this.type = Objects.requireNonNull(type);
       this.measure = Objects.requireNonNull(measure);
@@ -102,13 +105,18 @@ public record MeasureReport(
       return this;
     }
 
-    public Builder withMeasure(String measure) {
+    public Builder withMeasure(Canonical measure) {
       this.measure = Objects.requireNonNull(measure);
       return this;
     }
 
     public Builder withDate(OffsetDateTime date) {
       this.date = Objects.requireNonNull(date);
+      return this;
+    }
+
+    public Builder withPeriod(Period period) {
+      this.period = Objects.requireNonNull(period);
       return this;
     }
 
@@ -125,6 +133,7 @@ public record MeasureReport(
           type,
           measure,
           Optional.ofNullable(date),
+          Optional.ofNullable(period),
           Util.copyOfNullable(group));
     }
   }

@@ -41,8 +41,8 @@ class MeasureReportTest {
 
   @Test
   void serialize_date() {
-    var measureReport = MeasureReport.builder(Code.valueOf("draft"), Code.valueOf("individual"),
-            "foo")
+    var measureReport = MeasureReport.builder(MeasureReportStatus.COMPLETE.code(),
+            MeasureReportType.INDIVIDUAL.code(), Canonical.valueOf("foo"))
         .withDate(OffsetDateTime.parse("2022-07-20T21:21:01+02:00"))
         .build();
 
@@ -51,7 +51,7 @@ class MeasureReportTest {
     assertThat(string).isEqualTo("""
         {
           "resourceType" : "MeasureReport",
-          "status" : "draft",
+          "status" : "complete",
           "type" : "individual",
           "measure" : "foo",
           "date" : "2022-07-20T21:21:01+02:00"
@@ -60,8 +60,8 @@ class MeasureReportTest {
 
   @Test
   void serialize_date_zulu() {
-    var measureReport = MeasureReport.builder(Code.valueOf("draft"), Code.valueOf("individual"),
-            "foo")
+    var measureReport = MeasureReport.builder(MeasureReportStatus.COMPLETE.code(),
+            MeasureReportType.INDIVIDUAL.code(), Canonical.valueOf("foo"))
         .withDate(OffsetDateTime.parse("2022-07-20T21:21:01Z"))
         .build();
 
@@ -70,7 +70,7 @@ class MeasureReportTest {
     assertThat(string).isEqualTo("""
         {
           "resourceType" : "MeasureReport",
-          "status" : "draft",
+          "status" : "complete",
           "type" : "individual",
           "measure" : "foo",
           "date" : "2022-07-20T21:21:01Z"

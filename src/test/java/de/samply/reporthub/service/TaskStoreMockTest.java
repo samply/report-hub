@@ -4,8 +4,10 @@ import static de.samply.reporthub.model.fhir.PublicationStatus.UNKNOWN;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.samply.reporthub.model.fhir.ActivityDefinition;
+import de.samply.reporthub.model.fhir.Canonical;
 import de.samply.reporthub.model.fhir.Code;
 import de.samply.reporthub.model.fhir.MeasureReport;
+import de.samply.reporthub.model.fhir.MeasureReportStatus;
 import de.samply.reporthub.model.fhir.OperationOutcome;
 import java.io.IOException;
 import java.util.function.Consumer;
@@ -139,8 +141,8 @@ public class TaskStoreMockTest {
         .setBody("""
             {"resourceType" : "OperationOutcome"}
             """));
-    var measureReportToCreate = MeasureReport.builder(Code.valueOf("draft"),
-            Code.valueOf("individual"), "foo")
+    var measureReportToCreate = MeasureReport.builder(MeasureReportStatus.COMPLETE.code(),
+            Code.valueOf("individual"), Canonical.valueOf("foo"))
         .build();
 
     var result = taskStore.createMeasureReport(measureReportToCreate);

@@ -72,7 +72,9 @@ public class EvaluateMeasureMessageService {
   }
 
   Mono<Bundle> processRecord(Record record) {
-    logger.debug("Process message with id: {}", record.message().id().orElseThrow());
+    logger.debug("Process message with id: {}",
+        record.message().findFirstResource(MessageHeader.class)
+            .flatMap(MessageHeader::id).orElseThrow());
     return task(record.message())
         .flatMap(task -> taskStore.createTask(task)
             .doOnNext(createdTask -> logger.debug("Created Task with id: {}", createdTask.id()
