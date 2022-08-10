@@ -12,7 +12,7 @@
     "app.proxy.broker"
   ],
   "metadata": "<currently not used>",
-  "body": "<JSON encoded Beam Task Body with escaped double quotes>",
+  "body": "<base64 JSON encoded Beam Task Body>",
   "failure_strategy": {
     "retry": {
       "backoff_millisecs": 1000,
@@ -161,7 +161,7 @@ Status. The MeasureReport is the Beam Result Body.
   "task": "9e1ad660-9fa4-465a-9fca-b21c24c45347",
   "status": "succeeded",
   "metadata": "<currently not used>",
-  "body": "<JSON encoded Beam Result Body with escaped double quotes>"
+  "body": "<base64 JSON encoded Beam Result Body>"
 }
 ```
 
