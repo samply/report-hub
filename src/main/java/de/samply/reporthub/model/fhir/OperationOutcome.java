@@ -17,12 +17,25 @@ import java.util.Optional;
 public record OperationOutcome(
     Optional<String> id,
     Optional<Meta> meta,
-    List<Issue> issue) implements Resource {
+    List<Issue> issue) implements Resource<OperationOutcome> {
 
   public OperationOutcome {
     Objects.requireNonNull(id);
     Objects.requireNonNull(meta);
     Objects.requireNonNull(issue);
+  }
+
+  @Override
+  public OperationOutcome withId(String id) {
+    return new Builder(this).withId(id).build();
+  }
+
+  public static OperationOutcome issue(Issue issue) {
+    return OperationOutcome.builder().withIssue(List.of(issue)).build();
+  }
+
+  public static OperationOutcome empty() {
+    return OperationOutcome.builder().build();
   }
 
   public static Builder builder() {
@@ -33,7 +46,16 @@ public record OperationOutcome(
 
     private String id;
     private Meta meta;
-    private List<Issue> issues;
+    private List<Issue> issue;
+
+    public Builder() {
+    }
+
+    private Builder(OperationOutcome outcome) {
+      id = outcome.id.orElse(null);
+      meta = outcome.meta.orElse(null);
+      issue = outcome.issue;
+    }
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);
@@ -45,8 +67,8 @@ public record OperationOutcome(
       return this;
     }
 
-    public Builder withIssues(List<Issue> issues) {
-      this.issues = issues;
+    public Builder withIssue(List<Issue> issue) {
+      this.issue = issue;
       return this;
     }
 
@@ -54,7 +76,7 @@ public record OperationOutcome(
       return new OperationOutcome(
           Optional.ofNullable(id),
           Optional.ofNullable(meta),
-          Util.copyOfNullable(issues));
+          Util.copyOfNullable(issue));
     }
   }
 
@@ -74,6 +96,10 @@ public record OperationOutcome(
       Objects.requireNonNull(expression);
     }
 
+    public static Builder builder(Code severity, Code code) {
+      return new Builder(severity, code);
+    }
+
     public static class Builder {
 
       private Code severity;
@@ -81,6 +107,14 @@ public record OperationOutcome(
       private CodeableConcept details;
       private String diagnostics;
       private List<String> expression;
+
+      public Builder() {
+      }
+
+      public Builder(Code severity, Code code) {
+        this.severity = Objects.requireNonNull(severity);
+        this.code = Objects.requireNonNull(code);
+      }
 
       public Builder withSeverity(Code severity) {
         this.severity = Objects.requireNonNull(severity);

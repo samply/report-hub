@@ -23,7 +23,7 @@ public record Library(
     Code status,
     CodeableConcept type,
     Optional<CodeableConcept> subjectCodeableConcept,
-    List<Attachment> content) implements Resource {
+    List<Attachment> content) implements Resource<Library> {
 
   public Library {
     Objects.requireNonNull(id);
@@ -36,14 +36,19 @@ public record Library(
     Objects.requireNonNull(content);
   }
 
+  @Override
+  public Library withId(String id) {
+    return new Builder(this).withId(id).build();
+  }
+
   public Library addContent(Attachment content) {
     List<Attachment> list = new ArrayList<>(this.content);
     list.add(content);
     return new Builder(this).withContent(list).build();
   }
 
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(Code status) {
+    return new Builder(status);
   }
 
   public static class Builder {
@@ -58,6 +63,10 @@ public record Library(
     private List<Attachment> content;
 
     public Builder() {
+    }
+
+    private Builder(Code status) {
+      this.status = status;
     }
 
     private Builder(Library library) {

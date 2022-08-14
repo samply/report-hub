@@ -24,7 +24,7 @@ public record MeasureReport(
     Canonical measure,
     Optional<OffsetDateTime> date,
     Optional<Period> period,
-    List<Group> group) implements Resource {
+    List<Group> group) implements Resource<MeasureReport> {
 
   public MeasureReport {
     Objects.requireNonNull(id);
@@ -37,6 +37,7 @@ public record MeasureReport(
     Objects.requireNonNull(group);
   }
 
+  @Override
   public MeasureReport withId(String id) {
     return new Builder(this).withId(id).build();
   }

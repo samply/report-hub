@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import org.assertj.core.api.AbstractAssert;
 import org.springframework.web.reactive.function.server.RenderingResponse;
 
+@SuppressWarnings("UnusedReturnValue")
 public class RenderingResponseAssert extends
     AbstractAssert<RenderingResponseAssert, RenderingResponse> {
 
@@ -23,14 +24,12 @@ public class RenderingResponseAssert extends
     return this;
   }
 
-  @SuppressWarnings("UnusedReturnValue")
   public RenderingResponseAssert containsModelEntry(String key, Object value) {
     isNotNull();
     assertThat(actual.model()).containsEntry(key, value);
     return this;
   }
 
-  @SuppressWarnings("UnusedReturnValue")
   public <T> RenderingResponseAssert hasModelEntrySatisfying(String key, Class<T> type,
       Consumer<? super T> valueRequirements) {
     isNotNull();

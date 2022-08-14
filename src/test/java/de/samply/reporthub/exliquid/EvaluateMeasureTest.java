@@ -29,7 +29,8 @@ class EvaluateMeasureTest {
     var measure = Util.parseJson(json, Measure.class).block();
 
     assertThat(measure).isNotNull();
-    assertThat(measure.name()).contains("EXLIQUID");
+    assertThat(measure.name()).contains("exliquid");
+    assertThat(measure.title()).contains("EXLIQUID");
     assertThat(measure.findGroup(PATIENT)
         .flatMap(g -> g.findExtension(POPULATION_BASIS))
         .flatMap(e -> e.castValue(Code.class))

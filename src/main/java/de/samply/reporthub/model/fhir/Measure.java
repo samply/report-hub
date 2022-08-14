@@ -20,22 +20,29 @@ public record Measure(
     Optional<Meta> meta,
     Optional<String> url,
     Optional<String> name,
+    Optional<String> title,
     Code status,
     Optional<CodeableConcept> subjectCodeableConcept,
-    List<String> library,
+    List<Canonical> library,
     Optional<CodeableConcept> scoring,
-    List<Group> group) implements Resource {
+    List<Group> group) implements Resource<Measure> {
 
   public Measure {
     Objects.requireNonNull(id);
     Objects.requireNonNull(meta);
     Objects.requireNonNull(url);
     Objects.requireNonNull(name);
+    Objects.requireNonNull(title);
     Objects.requireNonNull(status);
     Objects.requireNonNull(subjectCodeableConcept);
     Objects.requireNonNull(library);
     Objects.requireNonNull(scoring);
     Objects.requireNonNull(group);
+  }
+
+  @Override
+  public Measure withId(String id) {
+    return new Builder(this).withId(id).build();
   }
 
   /**
@@ -49,8 +56,12 @@ public record Measure(
     return group.stream().filter(g -> g.code.stream().anyMatch(codePredicate)).findFirst();
   }
 
-  public Builder builder() {
-    return new Builder();
+  public static Builder draft() {
+    return new Builder(PublicationStatus.DRAFT.code());
+  }
+
+  public static Builder builder(Code status) {
+    return new Builder(status);
   }
 
   public static class Builder {
@@ -59,11 +70,32 @@ public record Measure(
     private Meta meta;
     private String url;
     private String name;
+    private String title;
     private Code status;
     private CodeableConcept subjectCodeableConcept;
-    private List<String> library;
+    private List<Canonical> library;
     private CodeableConcept scoring;
     private List<Group> group;
+
+    public Builder() {
+    }
+
+    private Builder(Code status) {
+      this.status = status;
+    }
+
+    private Builder(Measure measure) {
+      id = measure.id.orElse(null);
+      meta = measure.meta.orElse(null);
+      url = measure.url.orElse(null);
+      name = measure.name.orElse(null);
+      title = measure.title.orElse(null);
+      status = measure.status;
+      subjectCodeableConcept = measure.subjectCodeableConcept.orElse(null);
+      library = measure.library;
+      scoring = measure.scoring.orElse(null);
+      group = measure.group;
+    }
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);
@@ -85,6 +117,11 @@ public record Measure(
       return this;
     }
 
+    public Builder withTitle(String title) {
+      this.title = Objects.requireNonNull(title);
+      return this;
+    }
+
     public Builder withStatus(Code status) {
       this.status = Objects.requireNonNull(status);
       return this;
@@ -95,7 +132,7 @@ public record Measure(
       return this;
     }
 
-    public Builder withLibrary(List<String> library) {
+    public Builder withLibrary(List<Canonical> library) {
       this.library = library;
       return this;
     }
@@ -111,10 +148,12 @@ public record Measure(
     }
 
     public Measure build() {
-      return new Measure(Optional.ofNullable(id),
+      return new Measure(
+          Optional.ofNullable(id),
           Optional.ofNullable(meta),
           Optional.ofNullable(url),
           Optional.ofNullable(name),
+          Optional.ofNullable(title),
           status,
           Optional.ofNullable(subjectCodeableConcept),
           Util.copyOfNullable(library),

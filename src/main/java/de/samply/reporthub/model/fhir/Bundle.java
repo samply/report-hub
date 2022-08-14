@@ -1,5 +1,8 @@
 package de.samply.reporthub.model.fhir;
 
+import static de.samply.reporthub.model.fhir.BundleType.MESSAGE;
+import static de.samply.reporthub.model.fhir.BundleType.TRANSACTION;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -7,9 +10,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.Bundle.Builder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -20,16 +25,29 @@ public record Bundle(
     Optional<String> id,
     Optional<Meta> meta,
     Code type,
-    List<Entry> entry) implements Resource {
+    List<Entry> entry) implements Resource<Bundle> {
 
   public Bundle {
     Objects.requireNonNull(id);
     Objects.requireNonNull(meta);
-    Objects.requireNonNull(type);
+    Objects.requireNonNull(type, "missing type");
     Objects.requireNonNull(entry);
   }
 
-  public <T extends Resource> Optional<T> findFirstResource(Class<T> type) {
+  @Override
+  public Bundle withId(String id) {
+    return new Builder(this).withId(id).build();
+  }
+
+  /**
+   * Returns the resource of the first entry if it has the given {@code type}.
+   *
+   * @param type the type of the first resource
+   * @param <T>  the type of the resource
+   * @return an {@code Optional} of the found first resource or an empty {@code Optional} if no
+   * first resource with {@code type} was found
+   */
+  public <T extends Resource<T>> Optional<T> firstResourceAs(Class<T> type) {
     return entry.isEmpty() ? Optional.empty() : entry.get(0).resourceAs(type);
   }
 
@@ -37,23 +55,49 @@ public record Bundle(
     return entry.stream().filter(predicate).findFirst();
   }
 
-  public <T extends Resource> Optional<T> resolveResource(Class<T> type, Reference reference) {
+  public Optional<? extends Resource<?>> resolveResource(Reference reference) {
+    return reference.reference()
+        .flatMap(ref -> findFirstEntry(e -> e.fullUrl.stream().anyMatch(uri -> uri.hasValue(ref))))
+        .flatMap(e -> e.resource);
+  }
+
+  public <T extends Resource<T>> Optional<T> resolveResource(Class<T> type, Reference reference) {
     return reference.reference()
         .flatMap(ref -> findFirstEntry(e -> e.fullUrl.stream().anyMatch(uri -> uri.hasValue(ref))))
         .flatMap(e -> e.resourceAs(type));
   }
 
-  public <T extends Resource> Stream<T> resourcesAs(Class<T> type) {
+  public <T extends Resource<T>> Stream<T> resourcesAs(Class<T> type) {
     return entry.stream().map(e -> e.resourceAs(type)).flatMap(Optional::stream);
   }
 
-  public static <T extends Resource> Predicate<Bundle> hasFirstResource(Class<T> type,
+  public static <T extends Resource<T>> Predicate<Bundle> hasFirstResource(Class<T> type,
       Predicate<T> predicate) {
-    return bundle -> bundle.findFirstResource(type).stream().anyMatch(predicate);
+    return bundle -> bundle.firstResourceAs(type).stream().anyMatch(predicate);
+  }
+
+  public static Builder message() {
+    return new Builder(MESSAGE.code());
+  }
+
+  public static Builder transaction() {
+    return new Builder(TRANSACTION.code());
   }
 
   public static Builder builder(Code type) {
     return new Builder(type);
+  }
+
+  public <T extends Resource<T>> Optional<Bundle> mapFirstResource(Class<T> type,
+      Function<? super T, ? extends T> mapper) {
+    Objects.requireNonNull(mapper);
+    return entry.stream().findFirst()
+        .flatMap(firstEntry -> firstEntry.resourceAs(type).map(resource -> {
+          var newEntry = new ArrayList<Entry>();
+          newEntry.add(firstEntry.withResource(mapper.apply(resource)));
+          newEntry.addAll(entry.stream().skip(1).toList());
+          return new Builder(this).withEntry(newEntry).build();
+        }));
   }
 
   public static class Builder {
@@ -68,6 +112,13 @@ public record Bundle(
 
     private Builder(Code type) {
       this.type = Objects.requireNonNull(type);
+    }
+
+    private Builder(Bundle bundle) {
+      id = bundle.id.orElse(null);
+      meta = bundle.meta.orElse(null);
+      type = bundle.type;
+      entry = bundle.entry;
     }
 
     public Builder withId(String id) {
@@ -103,7 +154,7 @@ public record Bundle(
   @JsonDeserialize(builder = Entry.Builder.class)
   public record Entry(
       Optional<Uri> fullUrl,
-      Optional<Resource> resource,
+      Optional<Resource<?>> resource,
       Optional<Request> request,
       Optional<Response> response) implements BackboneElement {
 
@@ -114,7 +165,11 @@ public record Bundle(
       Objects.requireNonNull(response);
     }
 
-    public <T extends Resource> Optional<T> resourceAs(Class<T> type) {
+    public Entry withResource(Resource<?> resource) {
+      return new Builder(this).withResource(resource).build();
+    }
+
+    public <T extends Resource<T>> Optional<T> resourceAs(Class<T> type) {
       return resource.flatMap(r -> r.cast(type));
     }
 
@@ -125,16 +180,26 @@ public record Bundle(
     public static class Builder {
 
       private Uri fullUrl;
-      private Resource resource;
+      private Resource<?> resource;
       private Request request;
       private Response response;
+
+      public Builder() {
+      }
+
+      private Builder(Entry entry) {
+        fullUrl = entry.fullUrl.orElse(null);
+        resource = entry.resource.orElse(null);
+        request = entry.request.orElse(null);
+        response = entry.response.orElse(null);
+      }
 
       public Builder withFullUrl(Uri fullUrl) {
         this.fullUrl = Objects.requireNonNull(fullUrl);
         return this;
       }
 
-      public Builder withResource(Resource resource) {
+      public Builder withResource(Resource<?> resource) {
         this.resource = Objects.requireNonNull(resource);
         return this;
       }

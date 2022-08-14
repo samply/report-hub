@@ -16,12 +16,17 @@ import java.util.Optional;
 public record CapabilityStatement(
     Optional<String> id,
     Optional<Meta> meta,
-    Optional<Software> software) implements Resource {
+    Optional<Software> software) implements Resource<CapabilityStatement> {
 
   public CapabilityStatement {
     Objects.requireNonNull(id);
     Objects.requireNonNull(meta);
     Objects.requireNonNull(software);
+  }
+
+  @Override
+  public CapabilityStatement withId(String id) {
+    return new Builder(this).withId(id).build();
   }
 
   public static Builder builder() {
@@ -33,6 +38,15 @@ public record CapabilityStatement(
     private String id;
     private Meta meta;
     private Software software;
+
+    public Builder() {
+    }
+
+    private Builder(CapabilityStatement statement) {
+      id = statement.id.orElse(null);
+      meta = statement.meta.orElse(null);
+      software = statement.software.orElse(null);
+    }
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);

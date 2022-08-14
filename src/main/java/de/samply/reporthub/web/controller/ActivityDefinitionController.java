@@ -4,8 +4,8 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 
-import de.samply.reporthub.service.ResourceNotFoundException;
-import de.samply.reporthub.service.TaskStore;
+import de.samply.reporthub.service.fhir.store.ResourceNotFoundException;
+import de.samply.reporthub.service.fhir.store.TaskStore;
 import java.util.Map;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -40,14 +40,14 @@ public class ActivityDefinitionController {
 
   Mono<ServerResponse> handle(ServerRequest request) {
     String id = request.pathVariable("id");
-    logger.debug("Request ActivityDefinition with id = {}", id);
+    logger.debug("Request ActivityDefinition with id: {}", id);
     return taskStore.fetchActivityDefinition(id)
         .flatMap(task -> ok().render("activity-definition", Map.of("activityDefinition", task)))
         .onErrorResume(ResourceNotFoundException.class, ActivityDefinitionController::notFound);
   }
 
   private static Mono<ServerResponse> notFound(ResourceNotFoundException e) {
-    var error = "The ActivityDefinition with id `%s` was not found.".formatted(e.getId());
+    var error = "The ActivityDefinition with id `%s` was not found.".formatted(e.id());
     logger.warn(error);
     return ok().render("404", Map.of("error", error));
   }

@@ -24,8 +24,8 @@ import de.samply.reporthub.model.fhir.MeasureReport.Group.Stratifier.Stratum;
 import de.samply.reporthub.model.fhir.MeasureReport.Group.Stratifier.Stratum.Component;
 import de.samply.reporthub.model.fhir.MeasureReportStatus;
 import de.samply.reporthub.model.fhir.MeasureReportType;
-import de.samply.reporthub.service.ResourceNotFoundException;
-import de.samply.reporthub.service.TaskStore;
+import de.samply.reporthub.service.fhir.store.ResourceNotFoundException;
+import de.samply.reporthub.service.fhir.store.TaskStore;
 import de.samply.reporthub.util.IntPair;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -44,17 +44,17 @@ class ReportControllerTest {
 
   private static final String ID = "id-180016";
   private static final CodeableConcept PATIENT_GROUP_CODE =
-      CodeableConcept.of(Coding.of(EXLIQUID_MEASURE_GROUP, "patient"));
+      CodeableConcept.coding(Coding.of(EXLIQUID_MEASURE_GROUP, "patient"));
   private static final CodeableConcept SPECIMEN_GROUP_CODE =
-      CodeableConcept.of(Coding.of(EXLIQUID_MEASURE_GROUP, "specimen"));
+      CodeableConcept.coding(Coding.of(EXLIQUID_MEASURE_GROUP, "specimen"));
   private static final CodeableConcept INITIAL_POPULATION_CODE =
-      CodeableConcept.of(Coding.of(MEASURE_POPULATION, "initial-population"));
+      CodeableConcept.coding(Coding.of(MEASURE_POPULATION, "initial-population"));
   private static final CodeableConcept DIAGNOSIS_STRATIFIER_CODE =
-      CodeableConcept.of(Coding.of(EXLIQUID_STRATIFIER, "diagnosis"));
+      CodeableConcept.coding(Coding.of(EXLIQUID_STRATIFIER, "diagnosis"));
   private static final CodeableConcept SAMPLE_DIAGNOSIS_STRATIFIER_CODE =
-      CodeableConcept.of(Coding.of(EXLIQUID_STRATIFIER, "sample-diagnosis"));
+      CodeableConcept.coding(Coding.of(EXLIQUID_STRATIFIER, "sample-diagnosis"));
   private static final CodeableConcept SAMPLE_TYPE_STRATIFIER_CODE =
-      CodeableConcept.of(Coding.of(EXLIQUID_STRATIFIER, "sample-type"));
+      CodeableConcept.coding(Coding.of(EXLIQUID_STRATIFIER, "sample-type"));
   private static final MeasureReport EMPTY_MEASURE_REPORT = MeasureReport.builder(
           MeasureReportStatus.COMPLETE.code(),
           MeasureReportType.INDIVIDUAL.code(),
@@ -159,7 +159,7 @@ class ReportControllerTest {
                         .withCode(List.of(DIAGNOSIS_STRATIFIER_CODE))
                         .withStratum(List.of(
                             Stratum.builder()
-                                .withValue(CodeableConcept.of("C25"))
+                                .withValue(CodeableConcept.text("C25"))
                                 .withPopulation(List.of(
                                     Stratum.Population.of(INITIAL_POPULATION_CODE, 23)))
                                 .build()
@@ -180,10 +180,10 @@ class ReportControllerTest {
                                 .withComponent(List.of(
                                     Component.of(
                                         SAMPLE_DIAGNOSIS_STRATIFIER_CODE,
-                                        CodeableConcept.of("C25")),
+                                        CodeableConcept.text("C25")),
                                     Component.of(
                                         SAMPLE_TYPE_STRATIFIER_CODE,
-                                        CodeableConcept.of(BLOOD_PLASMA))))
+                                        CodeableConcept.text(BLOOD_PLASMA))))
                                 .withPopulation(List.of(
                                     Stratum.Population.of(INITIAL_POPULATION_CODE, 20)))
                                 .build(),
@@ -191,10 +191,10 @@ class ReportControllerTest {
                                 .withComponent(List.of(
                                     Component.of(
                                         SAMPLE_DIAGNOSIS_STRATIFIER_CODE,
-                                        CodeableConcept.of("C25")),
+                                        CodeableConcept.text("C25")),
                                     Component.of(
                                         SAMPLE_TYPE_STRATIFIER_CODE,
-                                        CodeableConcept.of(PERIPHERAL_BLOOD_CELLS_VITAL))))
+                                        CodeableConcept.text(PERIPHERAL_BLOOD_CELLS_VITAL))))
                                 .withPopulation(List.of(
                                     Stratum.Population.of(INITIAL_POPULATION_CODE, 22)))
                                 .build()
@@ -233,8 +233,8 @@ class ReportControllerTest {
         .withStratum(List.of(
             Stratum.builder()
                 .withComponent(List.of(
-                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.of("C25")),
-                    Component.of(SAMPLE_TYPE_STRATIFIER_CODE, CodeableConcept.of(BLOOD_PLASMA))))
+                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.text("C25")),
+                    Component.of(SAMPLE_TYPE_STRATIFIER_CODE, CodeableConcept.text(BLOOD_PLASMA))))
                 .withPopulation(List.of(Stratum.Population.of(INITIAL_POPULATION_CODE, 23)))
                 .build()
         ))
@@ -257,8 +257,8 @@ class ReportControllerTest {
         .withStratum(List.of(
             Stratum.builder()
                 .withComponent(List.of(
-                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.of("C25")),
-                    Component.of(SAMPLE_TYPE_STRATIFIER_CODE, CodeableConcept.of(BLOOD_PLASMA))))
+                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.text("C25")),
+                    Component.of(SAMPLE_TYPE_STRATIFIER_CODE, CodeableConcept.text(BLOOD_PLASMA))))
                 .build()
         ))
         .build();
@@ -277,9 +277,9 @@ class ReportControllerTest {
         .withStratum(List.of(
             Stratum.builder()
                 .withComponent(List.of(
-                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.of("C25")),
+                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.text("C25")),
                     Component.of(SAMPLE_TYPE_STRATIFIER_CODE,
-                        CodeableConcept.of(PERIPHERAL_BLOOD_CELLS_VITAL))))
+                        CodeableConcept.text(PERIPHERAL_BLOOD_CELLS_VITAL))))
                 .withPopulation(List.of(Stratum.Population.of(INITIAL_POPULATION_CODE, 23)))
                 .build()
         ))
@@ -302,8 +302,8 @@ class ReportControllerTest {
         .withStratum(List.of(
             Stratum.builder()
                 .withComponent(List.of(
-                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.of("C25")),
-                    Component.of(SAMPLE_TYPE_STRATIFIER_CODE, CodeableConcept.of("foo"))))
+                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.text("C25")),
+                    Component.of(SAMPLE_TYPE_STRATIFIER_CODE, CodeableConcept.text("foo"))))
                 .withPopulation(List.of(Stratum.Population.of(INITIAL_POPULATION_CODE, 23)))
                 .build()
         ))
@@ -326,16 +326,16 @@ class ReportControllerTest {
         .withStratum(List.of(
             Stratum.builder()
                 .withComponent(List.of(
-                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.of("C25")),
+                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.text("C25")),
                     Component.of(SAMPLE_TYPE_STRATIFIER_CODE,
-                        CodeableConcept.of(BLOOD_PLASMA))))
+                        CodeableConcept.text(BLOOD_PLASMA))))
                 .withPopulation(List.of(Stratum.Population.of(INITIAL_POPULATION_CODE, 23)))
                 .build(),
             Stratum.builder()
                 .withComponent(List.of(
-                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.of("C25")),
+                    Component.of(SAMPLE_DIAGNOSIS_STRATIFIER_CODE, CodeableConcept.text("C25")),
                     Component.of(SAMPLE_TYPE_STRATIFIER_CODE,
-                        CodeableConcept.of(PERIPHERAL_BLOOD_CELLS_VITAL))))
+                        CodeableConcept.text(PERIPHERAL_BLOOD_CELLS_VITAL))))
                 .withPopulation(List.of(Stratum.Population.of(INITIAL_POPULATION_CODE, 42)))
                 .build()
         ))

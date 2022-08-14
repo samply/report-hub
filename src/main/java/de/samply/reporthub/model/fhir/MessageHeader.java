@@ -20,14 +20,31 @@ public record MessageHeader(
     Optional<Meta> meta,
     Coding eventCoding,
     List<Destination> destination,
+    List<Source> source,
     Optional<Response> response,
-    List<Reference> focus) implements Resource {
+    List<Reference> focus) implements Resource<MessageHeader> {
 
   public MessageHeader {
     Objects.requireNonNull(id);
     Objects.requireNonNull(meta);
     Objects.requireNonNull(eventCoding);
+    Objects.requireNonNull(destination);
+    Objects.requireNonNull(source);
+    Objects.requireNonNull(response);
     Objects.requireNonNull(focus);
+  }
+
+  @Override
+  public MessageHeader withId(String id) {
+    return new Builder(this).withId(id).build();
+  }
+
+  public MessageHeader withDestination(List<Destination> destination) {
+    return new Builder(this).withDestination(destination).build();
+  }
+
+  public MessageHeader withSource(List<Source> source) {
+    return new Builder(this).withSource(source).build();
   }
 
   public Optional<Reference> findFirstFocus() {
@@ -48,6 +65,7 @@ public record MessageHeader(
     private Meta meta;
     private Coding eventCoding;
     private List<Destination> destination;
+    private List<Source> source;
     private Response response;
     private List<Reference> focus;
 
@@ -56,6 +74,16 @@ public record MessageHeader(
 
     private Builder(Coding eventCoding) {
       this.eventCoding = Objects.requireNonNull(eventCoding);
+    }
+
+    private Builder(MessageHeader header) {
+      id = header.id.orElse(null);
+      meta = header.meta.orElse(null);
+      eventCoding = header.eventCoding;
+      destination = header.destination;
+      source = header.source;
+      response = header.response.orElse(null);
+      focus = header.focus;
     }
 
     public Builder withId(String id) {
@@ -78,6 +106,11 @@ public record MessageHeader(
       return this;
     }
 
+    public Builder withSource(List<Source> source) {
+      this.source = source;
+      return this;
+    }
+
     public Builder withResponse(Response response) {
       this.response = Objects.requireNonNull(response);
       return this;
@@ -94,6 +127,7 @@ public record MessageHeader(
           Optional.ofNullable(meta),
           eventCoding,
           Util.copyOfNullable(destination),
+          Util.copyOfNullable(source),
           Optional.ofNullable(response),
           Util.copyOfNullable(focus));
     }
@@ -103,6 +137,21 @@ public record MessageHeader(
 
     public Destination {
       Objects.requireNonNull(endpoint);
+    }
+
+    public static Destination endpoint(Url endpoint) {
+      return new Destination(endpoint);
+    }
+  }
+
+  public record Source(Url endpoint) {
+
+    public Source {
+      Objects.requireNonNull(endpoint);
+    }
+
+    public static Source endpoint(Url endpoint) {
+      return new Source(endpoint);
     }
   }
 

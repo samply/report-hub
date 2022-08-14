@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 public record Task(
     Optional<String> id,
     Optional<Meta> meta,
+    List<Extension> extension,
     List<Identifier> identifier,
     Optional<String> instantiatesCanonical,
     Code status,
@@ -32,11 +33,12 @@ public record Task(
     Optional<OffsetDateTime> lastModified,
     Optional<Restriction> restriction,
     List<Input> input,
-    List<Output> output) implements Resource {
+    List<Output> output) implements Resource<Task> {
 
   public Task {
     Objects.requireNonNull(id);
     Objects.requireNonNull(meta);
+    Objects.requireNonNull(extension);
     Objects.requireNonNull(identifier);
     Objects.requireNonNull(instantiatesCanonical);
     Objects.requireNonNull(status);
@@ -47,8 +49,22 @@ public record Task(
     Objects.requireNonNull(output);
   }
 
+  @Override
   public Task withId(String id) {
     return new Builder(this).withId(id).build();
+  }
+
+  /**
+   * Finds the {@link Extension} with the given {@code url}.
+   *
+   * @param url the URL to match
+   * @return an {@code Optional} of the found {@link Extension} or an empty {@code Optional} if no
+   * Extension was found
+   */
+  public Optional<Extension> findExtension(String url) {
+    return extension.stream()
+        .filter(e -> Objects.requireNonNull(url).equals(e.url()))
+        .findFirst();
   }
 
   public Optional<String> findIdentifierValue(String system) {
@@ -56,12 +72,6 @@ public record Task(
         .filter(i -> Optional.of(system).equals(i.system()))
         .map(Identifier::value).flatMap(Optional::stream)
         .findFirst();
-  }
-
-  public Task addIdentifier(Identifier identifier) {
-    var list = new ArrayList<>(this.identifier);
-    list.add(identifier);
-    return new Builder(this).withIdentifier(list).build();
   }
 
   public Task withStatus(Code status) {
@@ -106,6 +116,18 @@ public record Task(
     return new Builder(this).withOutput(list).build();
   }
 
+  public static Builder draft() {
+    return new Builder(TaskStatus.DRAFT.code());
+  }
+
+  public static Builder ready() {
+    return new Builder(TaskStatus.READY.code());
+  }
+
+  public static Builder failed() {
+    return new Builder(TaskStatus.FAILED.code());
+  }
+
   public static Builder builder(Code status) {
     return new Builder(status);
   }
@@ -114,6 +136,7 @@ public record Task(
 
     private String id;
     private Meta meta;
+    private List<Extension> extension;
     private List<Identifier> identifier;
     private String instantiatesCanonical;
     private Code status;
@@ -133,6 +156,7 @@ public record Task(
     private Builder(Task task) {
       id = task.id.orElse(null);
       meta = task.meta.orElse(null);
+      extension = task.extension;
       identifier = task.identifier;
       instantiatesCanonical = task.instantiatesCanonical.orElse(null);
       status = task.status;
@@ -153,8 +177,13 @@ public record Task(
       return this;
     }
 
+    public Builder withExtension(List<Extension> extension) {
+      this.extension = extension;
+      return this;
+    }
+
     public Builder withIdentifier(List<Identifier> identifier) {
-      this.identifier = Util.copyOfNullable(identifier);
+      this.identifier = identifier;
       return this;
     }
 
@@ -196,6 +225,7 @@ public record Task(
     public Task build() {
       return new Task(Optional.ofNullable(id),
           Optional.ofNullable(meta),
+          Util.copyOfNullable(extension),
           Util.copyOfNullable(identifier),
           Optional.ofNullable(instantiatesCanonical),
           status,
@@ -241,7 +271,7 @@ public record Task(
     }
 
     public static Input of(Coding type, Element value) {
-      return new Builder(CodeableConcept.of(type), value).build();
+      return new Builder(CodeableConcept.coding(type), value).build();
     }
 
     public <T extends Element> Optional<T> castValue(Class<T> type) {
@@ -273,6 +303,11 @@ public record Task(
 
       public Builder withType(CodeableConcept type) {
         this.type = Objects.requireNonNull(type);
+        return this;
+      }
+
+      public Builder withValueString(StringElement value) {
+        this.value = Objects.requireNonNull(value);
         return this;
       }
 
@@ -302,11 +337,15 @@ public record Task(
         serializers.findValueSerializer(CodeableConcept.class)
             .serialize(input.type, gen, serializers);
 
-        gen.writeFieldName("value" + input.value.getClass().getSimpleName());
+        gen.writeFieldName("value" + typeName(input.value.getClass()));
         serializers.findValueSerializer(input.value.getClass())
             .serialize(input.value, gen, serializers);
 
         gen.writeEndObject();
+      }
+
+      private static String typeName(Class<?> type) {
+        return StringElement.class.equals(type) ? "String" : type.getSimpleName();
       }
     }
   }
@@ -323,7 +362,7 @@ public record Task(
     }
 
     public static Output of(Coding type, Element value) {
-      return new Builder(CodeableConcept.of(type), value).build();
+      return new Builder(CodeableConcept.coding(type), value).build();
     }
 
     public <T extends Element> Optional<T> castValue(Class<T> type) {
@@ -358,6 +397,11 @@ public record Task(
         return this;
       }
 
+      public Builder withValueString(StringElement value) {
+        this.value = Objects.requireNonNull(value);
+        return this;
+      }
+
       public Builder withValueCodeableConcept(CodeableConcept value) {
         this.value = Objects.requireNonNull(value);
         return this;
@@ -384,11 +428,15 @@ public record Task(
         serializers.findValueSerializer(CodeableConcept.class)
             .serialize(output.type, gen, serializers);
 
-        gen.writeFieldName("value" + output.value.getClass().getSimpleName());
+        gen.writeFieldName("value" + typeName(output.value.getClass()));
         serializers.findValueSerializer(output.value.getClass())
             .serialize(output.value, gen, serializers);
 
         gen.writeEndObject();
+      }
+
+      private static String typeName(Class<?> type) {
+        return StringElement.class.equals(type) ? "String" : type.getSimpleName();
       }
     }
   }

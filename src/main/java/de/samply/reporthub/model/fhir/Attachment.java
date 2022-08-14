@@ -9,7 +9,8 @@ import java.util.Optional;
 
 @JsonInclude(Include.NON_EMPTY)
 @JsonDeserialize(builder = Builder.class)
-public record Attachment(Optional<Code> contentType, Optional<String> data) implements Element {
+public record Attachment(Optional<Code> contentType, Optional<Base64Binary> data) implements
+    Element {
 
   public Attachment {
     Objects.requireNonNull(contentType);
@@ -23,15 +24,15 @@ public record Attachment(Optional<Code> contentType, Optional<String> data) impl
   public static class Builder {
 
     private Code contentType;
-    private String data;
+    private Base64Binary data;
 
     public Builder withContentType(Code contentType) {
-      this.contentType = contentType;
+      this.contentType = Objects.requireNonNull(contentType);
       return this;
     }
 
-    public Builder withData(String data) {
-      this.data = data;
+    public Builder withData(Base64Binary data) {
+      this.data = Objects.requireNonNull(data);
       return this;
     }
 

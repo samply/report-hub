@@ -2,6 +2,8 @@ app:
   beam:
     appId: "app1.proxy1.broker"
     secret: App1Secret
+    #appId: "report-hub.alex.broker.dev.ccp-it.dktk.dkfz.de"
+    #secret: "3128937asd7823hZ."
     proxy:
       baseUrl: 'http://localhost:8081'
   taskStore:

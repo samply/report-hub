@@ -18,13 +18,18 @@ public record Endpoint(
     Optional<String> id,
     Optional<Meta> meta,
     List<Identifier> identifier,
-    String address) implements Resource {
+    String address) implements Resource<Endpoint> {
 
   public Endpoint {
     Objects.requireNonNull(id);
     Objects.requireNonNull(meta);
     Objects.requireNonNull(identifier);
     Objects.requireNonNull(address);
+  }
+
+  @Override
+  public Endpoint withId(String id) {
+    return new Builder(this).withId(id).build();
   }
 
   public static Builder builder(String address) {
@@ -43,6 +48,13 @@ public record Endpoint(
 
     private Builder(String address) {
       this.address = Objects.requireNonNull(address);
+    }
+
+    private Builder(Endpoint endpoint) {
+      id = endpoint.id.orElse(null);
+      meta = endpoint.meta.orElse(null);
+      identifier = endpoint.identifier;
+      address = endpoint.address;
     }
 
     public Builder withId(String id) {

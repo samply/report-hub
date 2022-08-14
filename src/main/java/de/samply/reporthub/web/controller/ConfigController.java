@@ -4,9 +4,9 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 
-import de.samply.reporthub.service.DataStore;
-import de.samply.reporthub.service.Store;
-import de.samply.reporthub.service.TaskStore;
+import de.samply.reporthub.service.fhir.store.DataStore;
+import de.samply.reporthub.service.fhir.store.Store;
+import de.samply.reporthub.service.fhir.store.TaskStore;
 import de.samply.reporthub.util.Monos;
 import de.samply.reporthub.web.converter.ConfigConverter;
 import de.samply.reporthub.web.model.StoreConfig;

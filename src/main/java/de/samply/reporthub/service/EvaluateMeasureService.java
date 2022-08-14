@@ -1,22 +1,27 @@
 package de.samply.reporthub.service;
 
-import static de.samply.reporthub.model.TaskCode.EVALUATE_MEASURE;
-import static de.samply.reporthub.model.TaskInput.MEASURE;
+import static de.samply.reporthub.dktk.model.fhir.TaskCode.EVALUATE_MEASURE;
+import static de.samply.reporthub.dktk.model.fhir.TaskInput.MEASURE;
 import static de.samply.reporthub.model.fhir.TaskStatus.COMPLETED;
 import static de.samply.reporthub.model.fhir.TaskStatus.FAILED;
 import static de.samply.reporthub.model.fhir.TaskStatus.IN_PROGRESS;
+import static de.samply.reporthub.model.fhir.TaskStatus.READY;
 
-import de.samply.reporthub.model.TaskCode;
-import de.samply.reporthub.model.TaskInput;
-import de.samply.reporthub.model.TaskOutput;
+import de.samply.reporthub.dktk.model.fhir.TaskCode;
+import de.samply.reporthub.dktk.model.fhir.TaskInput;
+import de.samply.reporthub.dktk.model.fhir.TaskOutput;
 import de.samply.reporthub.model.fhir.Canonical;
 import de.samply.reporthub.model.fhir.CodeableConcept;
 import de.samply.reporthub.model.fhir.MeasureReport;
 import de.samply.reporthub.model.fhir.Meta;
 import de.samply.reporthub.model.fhir.Reference;
+import de.samply.reporthub.model.fhir.StringElement;
 import de.samply.reporthub.model.fhir.Task;
 import de.samply.reporthub.model.fhir.Task.Output;
 import de.samply.reporthub.model.fhir.TaskStatus;
+import de.samply.reporthub.service.fhir.store.DataStore;
+import de.samply.reporthub.service.fhir.store.TaskStore;
+import de.samply.reporthub.util.Monos;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -33,21 +38,23 @@ import reactor.core.publisher.Mono;
 import reactor.retry.Repeat;
 
 /**
- * Processes Tasks with {@link Task#code() code}
+ * This service processes Tasks with {@link Task#code() code}
  * {@link TaskCode#EVALUATE_MEASURE evaluate-measure}.
  * <p>
  * The following will be done with each Task:
  * <ul>
  *   <li>update its status to {@link TaskStatus#IN_PROGRESS in-progress}</li>
  *   <li>evaluate the Measure with the URL taken from the input {@link TaskInput#MEASURE measure}</li>
- *   <li>store the resulting MeasureReport and reference it in the output {@link TaskOutput#MEASURE_REPORT measure-report}</li>
+ *   <li>store the resulting MeasureReport and reference it in the output
+ *   {@link TaskOutput#MEASURE_REPORT measure-report}</li>
  *   <li>update its status to {@link TaskStatus#COMPLETED completed}</li>
  * </ul>
  * <p>
  * In case any error happens besides updating the Task itself, the task status is set to
- * {@link TaskStatus#FAILED failed} with the error message in the output {@link TaskOutput#ERROR error}.
+ * {@link TaskStatus#FAILED failed} with the error message in the output
+ * {@link TaskOutput#ERROR error} as string value.
  * <p>
- * In case that the task itself can't be updated, the processing is stopped
+ * In case that the task itself can't be updated, the processing is stopped.
  */
 @Service
 public class EvaluateMeasureService {
@@ -86,7 +93,7 @@ public class EvaluateMeasureService {
   }
 
   Flux<Task> pipeline() {
-    return taskStore.listReadyTasks(EVALUATE_MEASURE)
+    return taskStore.listTasks(EVALUATE_MEASURE, clock.instant(), READY)
         .flatMap(this::processTask)
         .repeatWhen(Repeat.times(Long.MAX_VALUE).fixedBackoff(Duration.ofSeconds(1)));
   }
@@ -125,11 +132,9 @@ public class EvaluateMeasureService {
   }
 
   private Mono<String> measureUrl(Task task) {
-    return task.findInput(MEASURE_CONCEPT)
+    return Monos.justOrError(task.findInput(MEASURE_CONCEPT)
         .flatMap(input -> input.castValue(Canonical.class))
-        .flatMap(Canonical::value)
-        .map(Mono::just)
-        .orElseGet(() -> Mono.error(new Exception("Missing Measure URL in Task input.")));
+        .flatMap(Canonical::value), () -> new Exception("Missing Measure URL in Task input."));
   }
 
   private Mono<Task> complete(Task task, MeasureReport report) {
@@ -143,19 +148,19 @@ public class EvaluateMeasureService {
   private Mono<Task> fail(Task task, String message) {
     logger.debug("Fail Task with id `{}` because of: {}", task.id().orElseThrow(), message);
     return taskStore.updateTask(task.withStatus(FAILED.code())
-        .addOutput(Output.of(TaskOutput.ERROR.coding(), CodeableConcept.of(message)))
+        .addOutput(Output.of(TaskOutput.ERROR.coding(), StringElement.valueOf(message)))
         .withLastModified(OffsetDateTime.now(clock)));
   }
 
   private static void logOutcome(Task task) {
-    if (task.status().hasValue("completed")) {
-      logger.debug("Successfully processed task with id: {}", task.id().orElseThrow());
+    if (COMPLETED.test(task.status())) {
+      logger.debug("Successfully processed task with id: {}", task.id().orElse("<unknown>"));
     } else {
-      logger.debug("Failed to process task with id `{}`: {}", task.id().orElseThrow(),
-          task.findOutput(TaskOutput.ERROR.codeableConceptPredicate())
-              .flatMap(o -> o.castValue(CodeableConcept.class))
-              .flatMap(CodeableConcept::text)
-              .orElseThrow());
+      logger.debug("Failed to process task with id `{}`: {}", task.id().orElse("<unknown>"),
+          task.findOutput(CodeableConcept.containsCoding(TaskOutput.ERROR))
+              .flatMap(o -> o.castValue(StringElement.class))
+              .flatMap(StringElement::value)
+              .orElse("<unknown>"));
     }
   }
 

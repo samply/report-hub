@@ -11,6 +11,14 @@ import java.util.function.Predicate;
 @JsonInclude(Include.NON_EMPTY)
 public record CodeableConcept(List<Coding> coding, Optional<String> text) implements Element {
 
+  public Optional<String> findCodeValue(String systemValue) {
+    return coding.stream()
+        .filter(Coding.hasSystemValue(systemValue))
+        .map(Coding::code).flatMap(Optional::stream)
+        .map(Code::value).flatMap(Optional::stream)
+        .findFirst();
+  }
+
   public static Predicate<CodeableConcept> containsCoding(Predicate<Coding> predicate) {
     return codeableConcept -> codeableConcept.coding.stream().anyMatch(predicate);
   }
@@ -27,11 +35,11 @@ public record CodeableConcept(List<Coding> coding, Optional<String> text) implem
     return containsCoding(Coding.hasSystemValue(systemValue).and(Coding.hasCodeValue(codeValue)));
   }
 
-  public static CodeableConcept of(Coding coding) {
+  public static CodeableConcept coding(Coding coding) {
     return new Builder().withCoding(List.of(coding)).build();
   }
 
-  public static CodeableConcept of(String text) {
+  public static CodeableConcept text(String text) {
     return new Builder().withText(text).build();
   }
 

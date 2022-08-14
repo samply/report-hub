@@ -2,7 +2,8 @@
   "resourceType": "Measure",
   "id": "exliquid",
   "url": "https://dktk.dkfz.de/fhir/Measure/exliquid-dashboard",
-  "name": "EXLIQUID",
+  "name": "exliquid",
+  "title": "EXLIQUID",
   "status": "active",
   "subjectCodeableConcept": {
     "coding": [

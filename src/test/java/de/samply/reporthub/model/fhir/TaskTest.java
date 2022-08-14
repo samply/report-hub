@@ -48,7 +48,7 @@ class TaskTest {
 
   @Test
   void serialize_outputReference() {
-    var measureReport = Task.builder(TaskStatus.DRAFT.code())
+    var measureReport = Task.draft()
         .withOutput(List.of(Output.builder(
             CodeableConcept.builder().withText("foo").build(),
             Reference.builder().withReference("bar").build()).build()))

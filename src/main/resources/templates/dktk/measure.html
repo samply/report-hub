@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title
+      data-th-text="|Measure – ${measure.title} – Report Hub|">
+    Measure – EXLIQUID – Report Hub
+  </title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link data-th-href="'/css/bootstrap.min.css'"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+</head>
+<body>
+
+<div data-th-replace="header :: navbar"></div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="col-12">
+      <h2 data-th-text="|Measure – ${measure.title}|">Measure – EXLIQUID</h2>
+
+      <table class="table">
+        <tbody>
+        <tr>
+          <th scope="row">URL</th>
+          <td data-th-text="${measure.url}">
+            https://dktk.dkfz.de/fhir/Measure/exliquid-dashboard
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Status</th>
+          <td data-th-text="${measure.status}">active</td>
+        </tr>
+        </tbody>
+      </table>
+
+      <h3>CQL Library</h3>
+      <p>
+      <pre><code data-th-text="${measure.library}">library Retrieve
+using FHIR version '4.0.0'
+include FHIRHelpers version '4.0.0'
+
+codesystem SampleMaterialType: 'https://fhir.bbmri.de/CodeSystem/SampleMaterialType'
+
+context Patient
+
+define ExliquidSpecimen:
+  from [Specimen] S
+  where S.identifier.system contains 'https://dktk.dkfz.de/fhir/NamingSystem/exliquid-specimen'
+
+define InInitialPopulation:
+  exists ExliquidSpecimen
+
+define Diagnosis:
+  First(from [Condition] C
+    return C.code.coding.where(system = 'http://fhir.de/CodeSystem/dimdi/icd-10-gm').code.first())
+
+define function SampleType(specimen FHIR.Specimen):
+  specimen.type.coding.where(system = 'https://fhir.bbmri.de/CodeSystem/SampleMaterialType').code.first()</code></pre>
+      </p>
+    </div>
+  </div>
+
+</div>

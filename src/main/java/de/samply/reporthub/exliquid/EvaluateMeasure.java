@@ -6,14 +6,14 @@ import de.samply.reporthub.ClasspathIo;
 import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.ActivityDefinition;
 import de.samply.reporthub.model.fhir.Attachment;
+import de.samply.reporthub.model.fhir.Base64Binary;
 import de.samply.reporthub.model.fhir.Bundle;
 import de.samply.reporthub.model.fhir.Code;
 import de.samply.reporthub.model.fhir.Library;
 import de.samply.reporthub.model.fhir.Measure;
-import de.samply.reporthub.service.DataStore;
-import de.samply.reporthub.service.TaskStore;
+import de.samply.reporthub.service.fhir.store.DataStore;
+import de.samply.reporthub.service.fhir.store.TaskStore;
 import de.samply.reporthub.util.Monos;
-import java.util.Base64;
 import java.util.Objects;
 import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -63,7 +63,7 @@ public class EvaluateMeasure {
   private static Attachment createCqlAttachment(String content) {
     return Attachment.builder()
         .withContentType(Code.valueOf("text/cql"))
-        .withData(Base64.getEncoder().encodeToString(content.getBytes(UTF_8)))
+        .withData(Base64Binary.encoded(content.getBytes(UTF_8)))
         .build();
   }
 

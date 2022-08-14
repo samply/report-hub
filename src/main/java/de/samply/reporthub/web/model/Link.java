@@ -9,4 +9,8 @@ public record Link(URI href, String label) {
     Objects.requireNonNull(href);
     Objects.requireNonNull(label);
   }
+
+  public static Link of(URI href, String label) {
+    return new Link(href, label);
+  }
 }

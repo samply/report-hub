@@ -1,21 +1,25 @@
 package de.samply.reporthub.service;
 
 import static de.samply.reporthub.model.fhir.Assertions.assertThat;
+import static de.samply.reporthub.model.fhir.TaskStatus.READY;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import de.samply.reporthub.model.TaskCode;
-import de.samply.reporthub.model.TaskInput;
-import de.samply.reporthub.model.TaskOutput;
+import de.samply.reporthub.dktk.model.fhir.TaskCode;
+import de.samply.reporthub.dktk.model.fhir.TaskInput;
+import de.samply.reporthub.dktk.model.fhir.TaskOutput;
 import de.samply.reporthub.model.fhir.Canonical;
 import de.samply.reporthub.model.fhir.CodeableConcept;
 import de.samply.reporthub.model.fhir.MeasureReport;
 import de.samply.reporthub.model.fhir.MeasureReportStatus;
 import de.samply.reporthub.model.fhir.MeasureReportType;
 import de.samply.reporthub.model.fhir.Reference;
+import de.samply.reporthub.model.fhir.StringElement;
 import de.samply.reporthub.model.fhir.Task;
 import de.samply.reporthub.model.fhir.Task.Input;
 import de.samply.reporthub.model.fhir.TaskStatus;
+import de.samply.reporthub.service.fhir.store.DataStore;
+import de.samply.reporthub.service.fhir.store.TaskStore;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -33,9 +37,9 @@ import reactor.test.StepVerifier;
 class EvaluateMeasureServiceTest {
 
   private static final String TASK_ID = "task-id-153311";
-  private static final Task READY_TASK = Task.builder(TaskStatus.READY.code())
+  private static final Task READY_TASK = Task.ready()
       .withId(TASK_ID)
-      .withCode(CodeableConcept.of(TaskCode.EVALUATE_MEASURE.coding()))
+      .withCode(CodeableConcept.coding(TaskCode.EVALUATE_MEASURE.coding()))
       .build();
   private static final String ERROR_MSG = "error-msg-161027";
   private static final String MEASURE_URL = "measure-url-162504";
@@ -62,8 +66,9 @@ class EvaluateMeasureServiceTest {
 
   @Test
   void pipeline_errorOnListReadyTasks() {
-    when(taskStore.listReadyTasks(TaskCode.EVALUATE_MEASURE)).thenReturn(Flux.error(
-        new Exception(ERROR_MSG)));
+    when(taskStore.listTasks(TaskCode.EVALUATE_MEASURE, Instant.EPOCH, READY)).thenReturn(
+        Flux.error(
+            new Exception(ERROR_MSG)));
 
     var pipeline = service.pipeline();
 
@@ -72,7 +77,8 @@ class EvaluateMeasureServiceTest {
 
   @Test
   void pipeline_errorOnTaskUpdate() {
-    when(taskStore.listReadyTasks(TaskCode.EVALUATE_MEASURE)).thenReturn(Flux.just(READY_TASK));
+    when(taskStore.listTasks(TaskCode.EVALUATE_MEASURE, Instant.EPOCH, READY)).thenReturn(
+        Flux.just(READY_TASK));
     when(taskStore.updateTask(any())).thenReturn(Mono.error(new Exception(ERROR_MSG)));
 
     var pipeline = service.pipeline();
@@ -82,13 +88,14 @@ class EvaluateMeasureServiceTest {
 
   @Test
   void pipeline_failedTaskOnMissingMeasureUrl() {
-    when(taskStore.listReadyTasks(TaskCode.EVALUATE_MEASURE)).thenReturn(Flux.just(READY_TASK));
+    when(taskStore.listTasks(TaskCode.EVALUATE_MEASURE, Instant.EPOCH, READY)).thenReturn(
+        Flux.just(READY_TASK));
     when(taskStore.updateTask(any())).thenAnswer(i -> Mono.just(i.getArguments()[0]));
 
     var pipeline = service.pipeline();
 
     StepVerifier.create(pipeline)
-        .expectNextMatches(task -> task.status().hasValue("failed"))
+        .expectNextMatches(task -> TaskStatus.FAILED.test(task.status()))
         .thenCancel()
         .verify();
   }
@@ -115,9 +122,9 @@ class EvaluateMeasureServiceTest {
     var task = service.processTask(READY_TASK).block();
 
     assertThat(task)
-        .hasStatus(TaskStatus.FAILED.code())
-        .containsOutput(TaskOutput.ERROR.codeableConceptPredicate(),
-            CodeableConcept.of("Missing Measure URL in Task input."));
+        .hasStatus(TaskStatus.FAILED)
+        .containsOutput(CodeableConcept.containsCoding(TaskOutput.ERROR),
+            StringElement.valueOf("Missing Measure URL in Task input."));
   }
 
   /**
@@ -133,8 +140,9 @@ class EvaluateMeasureServiceTest {
     var task = service.processTask(readyTask).block();
 
     assertThat(task)
-        .hasStatus(TaskStatus.FAILED.code())
-        .containsOutput(TaskOutput.ERROR.codeableConceptPredicate(), CodeableConcept.of(ERROR_MSG));
+        .hasStatus(TaskStatus.FAILED)
+        .containsOutput(CodeableConcept.containsCoding(TaskOutput.ERROR),
+            StringElement.valueOf(ERROR_MSG));
   }
 
   /**
@@ -142,9 +150,9 @@ class EvaluateMeasureServiceTest {
    */
   @Test
   void processTask_failingMeasureReportStorage() {
-    var readyTask = Task.builder(TaskStatus.READY.code())
+    var readyTask = Task.ready()
         .withId(TASK_ID)
-        .withCode(CodeableConcept.of(TaskCode.EVALUATE_MEASURE.coding()))
+        .withCode(CodeableConcept.coding(TaskCode.EVALUATE_MEASURE.coding()))
         .withInput(List.of(
             Input.of(TaskInput.MEASURE.coding(), Canonical.valueOf(MEASURE_URL))
         ))
@@ -157,8 +165,9 @@ class EvaluateMeasureServiceTest {
     var task = service.processTask(readyTask).block();
 
     assertThat(task)
-        .hasStatus(TaskStatus.FAILED.code())
-        .containsOutput(TaskOutput.ERROR.codeableConceptPredicate(), CodeableConcept.of(ERROR_MSG));
+        .hasStatus(TaskStatus.FAILED)
+        .containsOutput(CodeableConcept.containsCoding(TaskOutput.ERROR),
+            StringElement.valueOf(ERROR_MSG));
   }
 
   /**
@@ -166,9 +175,9 @@ class EvaluateMeasureServiceTest {
    */
   @Test
   void processTask_successfulEvaluateMeasure() {
-    var readyTask = Task.builder(TaskStatus.READY.code())
+    var readyTask = Task.ready()
         .withId(TASK_ID)
-        .withCode(CodeableConcept.of(TaskCode.EVALUATE_MEASURE.coding()))
+        .withCode(CodeableConcept.coding(TaskCode.EVALUATE_MEASURE.coding()))
         .withInput(List.of(
             Input.of(TaskInput.MEASURE.coding(), Canonical.valueOf(MEASURE_URL))
         ))
@@ -181,8 +190,8 @@ class EvaluateMeasureServiceTest {
     var task = service.processTask(readyTask).block();
 
     assertThat(task)
-        .hasStatus(TaskStatus.COMPLETED.code())
-        .containsOutput(TaskOutput.MEASURE_REPORT.codeableConceptPredicate(),
+        .hasStatus(TaskStatus.COMPLETED)
+        .containsOutput(CodeableConcept.containsCoding(TaskOutput.MEASURE_REPORT),
             Reference.ofReference("MeasureReport", MEASURE_REPORT_ID));
   }
 }

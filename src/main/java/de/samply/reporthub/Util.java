@@ -44,6 +44,18 @@ public interface Util {
     }
   }
 
+  static Mono<String> printJson(Object o) {
+    return printJson(mapper(), o);
+  }
+
+  static Mono<String> printJson(ObjectMapper mapper, Object o) {
+    try {
+      return Mono.just(mapper.writeValueAsString(o));
+    } catch (JsonProcessingException e) {
+      return Mono.error(e);
+    }
+  }
+
   static ObjectMapper mapper() {
     ObjectMapper mapper = new ObjectMapper();
     mapper.registerModule(new Jdk8Module());
@@ -67,5 +79,17 @@ public interface Util {
     if (!expression) {
       throw new IllegalArgumentException(errorMessage);
     }
+  }
+
+  static IllegalArgumentException missingMessageHeader() {
+    return new IllegalArgumentException("Message header expected.");
+  }
+
+  static IllegalArgumentException missingMessageId() {
+    return new IllegalArgumentException("Message id expected.");
+  }
+
+  static IllegalArgumentException missingMessageSource() {
+    return new IllegalArgumentException("Message source expected.");
   }
 }

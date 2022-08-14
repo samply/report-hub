@@ -26,6 +26,10 @@ public record Extension(String url, Optional<Element> value) implements Element 
     return value.flatMap(v -> v.cast(type));
   }
 
+  public static Extension of(String url, Element value) {
+    return new Builder(url).withValue(value).build();
+  }
+
   public static Builder builder(String url) {
     return new Builder(url);
   }
@@ -64,6 +68,16 @@ public record Extension(String url, Optional<Element> value) implements Element 
       return this;
     }
 
+    public JsonBuilder withValueUrl(Url value) {
+      this.value = value;
+      return this;
+    }
+
+    public JsonBuilder withValueString(StringElement value) {
+      this.value = value;
+      return this;
+    }
+
     public Extension build() {
       return new Extension(url, Optional.ofNullable(value));
     }
@@ -78,10 +92,14 @@ public record Extension(String url, Optional<Element> value) implements Element 
       gen.writeStringField("url", extension.url);
       if (extension.value.isPresent()) {
         var value = extension.value.get();
-        gen.writeFieldName("value" + value.getClass().getSimpleName());
+        gen.writeFieldName("value" + typeName(value.getClass()));
         serializers.findValueSerializer(value.getClass()).serialize(value, gen, serializers);
       }
       gen.writeEndObject();
+    }
+
+    private static String typeName(Class<?> type) {
+      return StringElement.class.equals(type) ? "String" : type.getSimpleName();
     }
   }
 }

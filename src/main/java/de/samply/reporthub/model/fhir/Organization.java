@@ -18,7 +18,7 @@ public record Organization(
     Optional<String> id,
     Optional<Meta> meta,
     List<Identifier> identifier,
-    List<Reference> endpoint) implements Resource {
+    List<Reference> endpoint) implements Resource<Organization> {
 
   public Organization {
     Objects.requireNonNull(id);
@@ -27,12 +27,31 @@ public record Organization(
     Objects.requireNonNull(endpoint);
   }
 
+  @Override
+  public Organization withId(String id) {
+    return new Builder(this).withId(id).build();
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public static class Builder {
 
     private String id;
     private Meta meta;
     private List<Identifier> identifier;
     private List<Reference> endpoint;
+
+    public Builder() {
+    }
+
+    private Builder(Organization organization) {
+      id = organization.id.orElse(null);
+      meta = organization.meta.orElse(null);
+      identifier = organization.identifier;
+      endpoint = organization.endpoint;
+    }
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);

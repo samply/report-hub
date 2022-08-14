@@ -20,13 +20,15 @@ import java.util.Optional;
     @Type(Organization.class),
     @Type(Parameters.class),
     @Type(Task.class)})
-public interface Resource {
+public interface Resource<R extends Resource<R>> {
 
   Optional<String> id();
 
+  R withId(String id);
+
   Optional<Meta> meta();
 
-  default <T extends Resource> Optional<T> cast(Class<T> type) {
+  default <T extends Resource<T>> Optional<T> cast(Class<T> type) {
     return type.isInstance(this) ? Optional.of(type.cast(this)) : Optional.empty();
   }
 }

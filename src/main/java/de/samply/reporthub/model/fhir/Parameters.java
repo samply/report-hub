@@ -23,12 +23,17 @@ import java.util.Optional;
 public record Parameters(
     Optional<String> id,
     Optional<Meta> meta,
-    List<Parameter> parameter) implements Resource {
+    List<Parameter> parameter) implements Resource<Parameters> {
 
   public Parameters {
     Objects.requireNonNull(id);
     Objects.requireNonNull(meta);
     Objects.requireNonNull(parameter);
+  }
+
+  @Override
+  public Parameters withId(String id) {
+    return new Builder(this).withId(id).build();
   }
 
   public <T extends Element> Optional<T> findParameterValue(Class<T> type, String name) {
@@ -46,6 +51,15 @@ public record Parameters(
     private String id;
     private Meta meta;
     private List<Parameter> parameter;
+
+    public Builder() {
+    }
+
+    private Builder(Parameters parameters) {
+      id = parameters.id.orElse(null);
+      meta = parameters.meta.orElse(null);
+      parameter = parameters.parameter;
+    }
 
     public Builder withId(String id) {
       this.id = Objects.requireNonNull(id);
@@ -73,7 +87,7 @@ public record Parameters(
   @JsonInclude(Include.NON_EMPTY)
   @JsonSerialize(using = Serializer.class)
   @JsonDeserialize(builder = Parameter.JsonBuilder.class)
-  public record Parameter(String name, Optional<Element> value, Optional<Resource> resource) {
+  public record Parameter(String name, Optional<Element> value, Optional<Resource<?>> resource) {
 
     public Parameter {
       Objects.requireNonNull(name);
@@ -93,7 +107,7 @@ public record Parameters(
 
       private String name;
       private Element value;
-      private Resource resource;
+      private Resource<?> resource;
 
       private Builder(String name) {
         this.name = Objects.requireNonNull(name);
@@ -109,7 +123,7 @@ public record Parameters(
         return this;
       }
 
-      public Builder withResource(Resource resource) {
+      public Builder withResource(Resource<?> resource) {
         this.resource = Objects.requireNonNull(resource);
         return this;
       }
@@ -123,7 +137,7 @@ public record Parameters(
 
       private String name;
       private Element value;
-      private Resource resource;
+      private Resource<?> resource;
 
       public JsonBuilder withName(String name) {
         this.name = Objects.requireNonNull(name);
@@ -135,7 +149,7 @@ public record Parameters(
         return this;
       }
 
-      public JsonBuilder withResource(Resource resource) {
+      public JsonBuilder withResource(Resource<?> resource) {
         this.resource = Objects.requireNonNull(resource);
         return this;
       }

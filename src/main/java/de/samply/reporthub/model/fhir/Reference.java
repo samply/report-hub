@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.samply.reporthub.model.fhir.Reference.Builder;
-import de.samply.reporthub.service.Store;
+import de.samply.reporthub.service.fhir.store.Store;
 import java.util.Objects;
 import java.util.Optional;
 import reactor.core.publisher.Mono;
@@ -17,15 +17,19 @@ public record Reference(Optional<String> reference) implements Element {
     Objects.requireNonNull(reference);
   }
 
-  public static Reference ofReference(String type, String id) {
-    return new Builder().withReference(type + "/" + id).build();
+  public static Reference ofReference(String reference) {
+    return new Builder().withReference(reference).build();
   }
 
-  public <T extends Resource> Mono<T> resolve(Store store, Class<T> type) {
+  public static Reference ofReference(String type, String id) {
+    return ofReference(type + "/" + id);
+  }
+
+  public <T extends Resource<T>> Mono<T> resolve(Store store, Class<T> type) {
     return Mono.justOrEmpty(logicalId(type)).flatMap(id -> store.fetchResource(type, id));
   }
 
-  public Optional<String> logicalId(Class<? extends Resource> type) {
+  public Optional<String> logicalId(Class<? extends Resource<?>> type) {
     return reference.flatMap(ref -> {
       var parts = ref.split("/", 2);
       return (parts.length == 2 && type.getSimpleName().equals(parts[0]))

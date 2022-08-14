@@ -11,8 +11,8 @@ import de.samply.reporthub.model.fhir.MeasureReport;
 import de.samply.reporthub.model.fhir.MeasureReport.Group;
 import de.samply.reporthub.model.fhir.MeasureReport.Group.Stratifier;
 import de.samply.reporthub.model.fhir.MeasureReport.Group.Stratifier.Stratum.Component;
-import de.samply.reporthub.service.ResourceNotFoundException;
-import de.samply.reporthub.service.TaskStore;
+import de.samply.reporthub.service.fhir.store.ResourceNotFoundException;
+import de.samply.reporthub.service.fhir.store.TaskStore;
 import de.samply.reporthub.util.IntPair;
 import de.samply.reporthub.util.Optionals;
 import java.time.OffsetDateTime;
@@ -77,7 +77,7 @@ public class ReportController {
   }
 
   private static Mono<ServerResponse> notFound(ResourceNotFoundException e) {
-    var error = "The EXLIQUID report with id `%s` was not found.".formatted(e.getId());
+    var error = "The EXLIQUID report with id `%s` was not found.".formatted(e.id());
     logger.warn(error);
     return ok().render("404", Map.of("error", error));
   }

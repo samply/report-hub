@@ -5,8 +5,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.samply.reporthub.Util;
 import de.samply.reporthub.model.fhir.Bundle.Entry.Response;
 import org.junit.jupiter.api.Test;
+import reactor.test.StepVerifier;
 
 class BundleTest {
+
+  @Test
+  void deserialize_withoutType() {
+    var result = Util.parseJson("""
+        {"resourceType": "Bundle"}""", Bundle.class);
+
+    StepVerifier.create(result).expectErrorMessage(
+            """
+                Error while parsing a Bundle: Cannot construct instance of `de.samply.reporthub.model.fhir.Bundle$Builder`, problem: missing type
+                 at [Source: (String)"{"resourceType": "Bundle"}"; line: 1, column: 26]""")
+        .verify();
+  }
 
   @Test
   void deserialize_typeOnly() {
