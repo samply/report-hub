@@ -1,0 +1,31 @@
+### This file provides a template for creating a GitHub Actions Workflow,
+### that implements ci for a Docker Image.
+
+name: Docker CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    # Build then a new version is tagged
+    tags:
+      - '*.*.*'
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Build every night at 1am
+    - cron: '0 1 * * *'
+jobs:
+  build:
+    # This workflow defines how a maven package is built, tested and published.
+    # Visit: https://github.com/samply/github-workflows/blob/develop/.github/workflows/maven-ci.yml, for more information
+    uses: samply/github-workflows/.github/workflows/docker-ci.yml@main
+    with:
+      image-name: 'samply/report-hub'
+      artifact-name: 'report-hub.jar'
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
