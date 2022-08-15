@@ -28,6 +28,8 @@ jobs:
       OSSRH_GPG_SECRET_KEY_PASSWORD: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
 
   build-image:
+    needs:
+    - build-jar
     uses: samply/github-workflows/.github/workflows/docker-ci.yml@main
     with:
       image-name: 'samply/report-hub'
