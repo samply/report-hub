@@ -15,8 +15,16 @@
   <artifactId>report-hub</artifactId>
   <version>0.0.1-SNAPSHOT</version>
 
-  <name>report-hub</name>
+  <name>Report Hub</name>
   <description>A Service able to manage and execute FHIR Quality Reports.</description>
+  <url>https://github.com/samply/report-hub</url>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
 
   <properties>
     <testcontainers.version>1.17.2</testcontainers.version>
@@ -125,6 +133,8 @@
   </dependencies>
 
   <build>
+    <finalName>report-hub</finalName>
+
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
