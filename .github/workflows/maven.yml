@@ -1,0 +1,26 @@
+### This file provides a template for creating a GitHub Actions Workflow,
+### that implements the ci for a java library with maven.
+
+name: Java Library CI with Maven
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build:
+    # This workflow defines how a maven package is built, tested and published.
+    # Visit: https://github.com/samply/github-workflows/blob/develop/.github/workflows/maven-ci.yml, for more information
+    uses: samply/github-workflows/.github/workflows/maven.yml@main
+    with:
+      publish: false
+      java-version: 17      
+    secrets:
+      MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+      MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
