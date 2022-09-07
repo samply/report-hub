@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @JsonInclude(Include.NON_EMPTY)
 public record BeamTask(UUID id, String from, List<String> to, String metadata, String body,
-                       FailureStrategy failure_strategy) {
+                       int ttl, FailureStrategy failure_strategy) {
 
   public static final FailureStrategy DEFAULT_FAILURE_STRATEGY =
       new FailureStrategy(new Retry(1000, 5));
@@ -23,8 +23,8 @@ public record BeamTask(UUID id, String from, List<String> to, String metadata, S
     Objects.requireNonNull(failure_strategy);
   }
 
-  public static BeamTask of(UUID id, String from, List<String> to, String body) {
-    return new BeamTask(id, from, to, "foo", body, DEFAULT_FAILURE_STRATEGY);
+  public static BeamTask of(UUID id, String from, List<String> to, int ttl, String body) {
+    return new BeamTask(id, from, to, "foo", body, ttl, DEFAULT_FAILURE_STRATEGY);
   }
 
   public record FailureStrategy(Retry retry) {
