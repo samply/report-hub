@@ -21,11 +21,19 @@ jobs:
       publish: false
       java-version: 17
       artifact-name: "report-hub.jar"
+      maven-command-line-parameters: "-DskipTests"
     secrets:
       MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
       MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
       OSSRH_GPG_SECRET_KEY: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
       OSSRH_GPG_SECRET_KEY_PASSWORD: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+
+  test:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Pwd
+      run: pwd
 
   build-image:
     needs:
