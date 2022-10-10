@@ -20,20 +20,13 @@ jobs:
     with:
       publish: false
       java-version: 17
-      artifact-name: "report-hub.jar"
-      maven-command-line-parameters: "-DskipTests"
+      artifact-name: "jar"
+      artifact-path: "target/report-hub.jar"
     secrets:
       MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
       MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
       OSSRH_GPG_SECRET_KEY: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
       OSSRH_GPG_SECRET_KEY_PASSWORD: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
-
-  test:
-    runs-on: ubuntu-22.04
-
-    steps:
-    - name: Pwd
-      run: pwd
 
   build-image:
     needs:
@@ -41,7 +34,7 @@ jobs:
     uses: samply/github-workflows/.github/workflows/docker-ci.yml@main
     with:
       image-name: 'samply/report-hub'
-      artifact-name: 'report-hub.jar'
+      artifact-name: 'jar'
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
