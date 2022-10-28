@@ -1,15 +1,13 @@
 app:
   beam:
-    appId: "app1.proxy1.broker"
-    secret: App1Secret
-    #appId: "report-hub.alex.broker.dev.ccp-it.dktk.dkfz.de"
-    #secret: "3128937asd7823hZ."
+    appId: ${PROXY_ID}
+    secret: ${SECRET}
     proxy:
-      baseUrl: 'http://localhost:8081'
+      baseUrl: ${BEAM_PROXY}
   taskStore:
-    baseUrl: 'http://localhost:8083/fhir'
+    baseUrl: ${TASK_STORE}
   dataStore:
-    baseUrl: 'http://localhost:8084/fhir'
+    baseUrl: ${LDM_URL}
 spring:
   jackson:
     serialization:
