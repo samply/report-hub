@@ -23,7 +23,8 @@ public class ReportHubApplication {
   @Value("${app.beam.secret}")
   private String beamSecret;
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
+    Thread.sleep(35000);
     SpringApplication.run(ReportHubApplication.class, args);
   }
 

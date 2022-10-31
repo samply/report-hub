@@ -2,6 +2,7 @@ version: '3.2'
 services:
   task-store:
     image: "samply/blaze:0.18"
+    container_name: bridgehead-task-store
     environment:
       BASE_URL: "http://localhost:8083"
       JAVA_TOOL_OPTIONS: "-Xmx1g"
@@ -12,6 +13,7 @@ services:
     - "task-store-data:/app/data"
   data-store:
     image: "samply/blaze:0.18"
+    container_name: bridgehead-data-store
     environment:
       BASE_URL: "http://localhost:8084"
       JAVA_TOOL_OPTIONS: "-Xmx1g"
@@ -22,6 +24,21 @@ services:
     - "data-store-data:/app/data"
     #beam-proxy:
     #image: "ghcr.io/samply/beam-proxy:develop"
+  report-hub:
+    image: "samply/report-hub:latest"
+    container_name: bridgehead-report-hub
+    environment:
+      BASE_URL: "http://ccp-task-store:8080"
+      JAVA_TOOL_OPTIONS: "-Xmx1g"
+      LOG_LEVEL: "debug"
+      PROXY_ID: "report-hub.patrick-develop.broker.dev.ccp-it.dktk.dkfz.de."
+      SECRET: 3128937asd7823hZ.
+      TASK_STORE: "http://bridgehead-task-store:8080/fhir"
+      LDM_URL: "http://bridgehead-data-store:8080/fhir"
+      BEAM_PROXY: "http://host.docker.internal:8081"
+    restart: always
+    ports:
+      - "8080:8080"
 volumes:
   task-store-data:
   data-store-data:
