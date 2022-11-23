@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link data-th-href="'/css/bootstrap.min.css'"
+  <link data-th-href="@{/css/bootstrap.min.css}"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
         rel="stylesheet">
 </head>
@@ -21,12 +21,14 @@
     </div>
 
     <div class="col-4 text-end">
-      <form class="d-inline" action="/beam/poller/start" method="post">
+      <form class="d-inline" data-th-action="@{/beam/poller/start}" action="/beam/poller/start"
+            method="post">
         <button type="submit" class="btn btn-primary" data-th-disabled="${poller.isRunning}">
           Start
         </button>
       </form>
-      <form class="d-inline" action="/beam/poller/stop" method="post">
+      <form class="d-inline" data-th-action="@{/beam/poller/stop}" action="/beam/poller/stop"
+            method="post">
         <button type="submit" class="btn btn-primary" data-th-disabled="${not poller.isRunning}">
           Stop
         </button>

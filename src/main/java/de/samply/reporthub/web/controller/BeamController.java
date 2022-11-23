@@ -45,13 +45,13 @@ public class BeamController {
   private Mono<ServerResponse> start(ServerRequest request) {
     logger.debug("Start Beam poller");
     service.restart();
-    return seeOther(request.uriBuilder().replacePath("/beam").build()).build();
+    return seeOther(request.uriBuilder().pathSegment("..", "..").build()).build();
   }
 
   private Mono<ServerResponse> stop(ServerRequest request) {
     logger.debug("Stop Beam poller");
     service.stop();
-    return seeOther(request.uriBuilder().replacePath("/beam").build()).build();
+    return seeOther(request.uriBuilder().pathSegment("..", "..").build()).build();
   }
 
   Mono<Map<String, Object>> model() {

@@ -75,20 +75,20 @@ public class EvaluateMeasureTaskController {
   Mono<ServerResponse> handle(ServerRequest request) {
     String id = request.pathVariable("id");
     logger.debug("Request Task with id: {}", id);
-    return task(request, id)
+    return task(id)
         .flatMap(task -> ok().render("dktk/evaluate-measure-task", Map.of("task", task)))
         .onErrorResume(ResourceNotFoundException.class, EvaluateMeasureTaskController::notFound);
   }
 
-  Mono<EvaluateMeasureTask> task(ServerRequest request, String id) {
+  Mono<EvaluateMeasureTask> task(String id) {
     return taskStore.fetchTask(id)
         .flatMap(task -> taskHistory(id)
             .flatMap(history -> measureUrl(task)
-                .map(url -> new MeasureLinkBuilder(request).build(url)
+                .map(url -> new MeasureLinkBuilder().build(url)
                     .map(measureLink ->
-                        new TaskBuilder(request).build(task, Optional.of(measureLink), history)))
+                        new TaskBuilder().build(task, Optional.of(measureLink), history)))
                 .orElseGet(() ->
-                    Mono.just(new TaskBuilder(request).build(task, Optional.empty(), history)))));
+                    Mono.just(new TaskBuilder().build(task, Optional.empty(), history)))));
   }
 
   private Mono<List<Task>> taskHistory(String taskId) {
@@ -105,12 +105,6 @@ public class EvaluateMeasureTaskController {
 
   private class MeasureLinkBuilder {
 
-    private final ServerRequest request;
-
-    private MeasureLinkBuilder(ServerRequest request) {
-      this.request = Objects.requireNonNull(request);
-    }
-
     private Mono<Link> build(String url) {
       return dataStore.findByUrl(Measure.class, url)
           .map(this::measureLink)
@@ -123,15 +117,11 @@ public class EvaluateMeasureTaskController {
     }
 
     private URI measureUri(String id) {
-      return request.uriBuilder().replacePath("dktk/measure/{id}").build(id);
+      return URI.create("/dktk/measure/%s".formatted(id));
     }
   }
 
-  private record TaskBuilder(ServerRequest request) {
-
-    private TaskBuilder {
-      Objects.requireNonNull(request);
-    }
+  private static class TaskBuilder {
 
     private EvaluateMeasureTask build(Task task, Optional<Link> measureLink, List<Task> history) {
       return new EvaluateMeasureTask(
@@ -159,7 +149,7 @@ public class EvaluateMeasureTaskController {
     }
 
     private Link reportLink(String id) {
-      return Link.of(request.uriBuilder().replacePath("exliquid-report/{id}").build(id), "Report");
+      return Link.of(URI.create("/exliquid-report/%s".formatted(id)), "Report");
     }
   }
 

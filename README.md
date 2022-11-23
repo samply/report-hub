@@ -28,6 +28,10 @@ Start Report Hub using Maven:
 mvn spring-boot:run -Dspring-boot.run.arguments="--logging.level.de=DEBUG"
 ```
 
+## Docs
+
+* [Træfik (Report Hub Behind a Reverse Proxy)](docs/traefik.md)
+
 ## License
 
 Copyright 2022 - 2022 The Samply Community

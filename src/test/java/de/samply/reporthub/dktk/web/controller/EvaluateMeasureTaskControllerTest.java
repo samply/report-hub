@@ -29,7 +29,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -67,7 +66,6 @@ class EvaluateMeasureTaskControllerTest {
   void handle_minimal() {
     var request = mock(ServerRequest.class);
     when(request.pathVariable("id")).thenReturn(TASK_ID);
-    when(request.uriBuilder()).thenAnswer(invocation -> UriComponentsBuilder.newInstance());
     when(taskStore.fetchTask(TASK_ID)).thenReturn(Mono.just(TASK));
     when(dataStore.findByUrl(Measure.class, MEASURE_URL)).thenReturn(Mono.just(MEASURE));
     when(taskStore.fetchTaskHistory(TASK_ID)).thenReturn(Flux.empty());
@@ -100,11 +98,10 @@ class EvaluateMeasureTaskControllerTest {
 
   @Test
   void task_missingMeasureUrl() {
-    var request = mock(ServerRequest.class);
     when(taskStore.fetchTask(TASK_ID)).thenReturn(Mono.just(Task.draft().build()));
     when(taskStore.fetchTaskHistory(TASK_ID)).thenReturn(Flux.empty());
 
-    var result = controller.task(request, TASK_ID);
+    var result = controller.task(TASK_ID);
 
     StepVerifier.create(result)
         .assertNext(task -> assertThat(task.measureLink()).isEmpty())
@@ -116,14 +113,13 @@ class EvaluateMeasureTaskControllerTest {
    */
   @Test
   void task_measureFetchError() {
-    var request = mock(ServerRequest.class);
     when(taskStore.fetchTask(TASK_ID)).thenReturn(Mono.just(Task.draft()
         .withInput(List.of(Input.of(TaskInput.MEASURE.coding(), Canonical.valueOf(MEASURE_URL))))
         .build()));
     when(taskStore.fetchTaskHistory(TASK_ID)).thenReturn(Flux.empty());
     when(dataStore.findByUrl(Measure.class, MEASURE_URL)).thenReturn(Mono.error(new Exception()));
 
-    var result = controller.task(request, TASK_ID);
+    var result = controller.task(TASK_ID);
 
     StepVerifier.create(result)
         .assertNext(task -> assertThat(task.measureLink()).hasValueSatisfying(
@@ -136,20 +132,18 @@ class EvaluateMeasureTaskControllerTest {
 
   @Test
   void task() {
-    var request = mock(ServerRequest.class);
-    when(request.uriBuilder()).thenAnswer(invocation -> UriComponentsBuilder.newInstance());
     when(taskStore.fetchTask(TASK_ID)).thenReturn(Mono.just(TASK));
     when(taskStore.fetchTaskHistory(TASK_ID)).thenReturn(Flux.empty());
     when(dataStore.findByUrl(Measure.class, MEASURE_URL)).thenReturn(Mono.just(MEASURE));
 
-    var result = controller.task(request, TASK_ID);
+    var result = controller.task(TASK_ID);
 
     StepVerifier.create(result).assertNext(task -> {
           assertThat(task.id()).isEqualTo(TASK_ID);
           assertThat(task.status()).isEqualTo("draft");
           assertThat(task.measureLink()).hasValueSatisfying(
               link -> {
-                assertThat(link.href()).isEqualTo(URI.create("dktk/measure/" + MEASURE_ID));
+                assertThat(link.href()).isEqualTo(URI.create("/dktk/measure/" + MEASURE_ID));
                 assertThat(link.label()).isEqualTo(MEASURE_TITLE);
               });
           assertThat(task.reportLink()).isEmpty();
@@ -163,13 +157,11 @@ class EvaluateMeasureTaskControllerTest {
    */
   @Test
   void task_historyFetchError() {
-    var request = mock(ServerRequest.class);
-    when(request.uriBuilder()).thenAnswer(invocation -> UriComponentsBuilder.newInstance());
     when(taskStore.fetchTask(TASK_ID)).thenReturn(Mono.just(TASK));
     when(dataStore.findByUrl(Measure.class, MEASURE_URL)).thenReturn(Mono.just(MEASURE));
     when(taskStore.fetchTaskHistory(TASK_ID)).thenReturn(Flux.error(new Exception()));
 
-    var result = controller.task(request, TASK_ID);
+    var result = controller.task(TASK_ID);
 
     StepVerifier.create(result).assertNext(webTask -> {
           assertThat(webTask.id()).isEqualTo(TASK_ID);
@@ -180,14 +172,13 @@ class EvaluateMeasureTaskControllerTest {
 
   @Test
   void task_withError() {
-    var request = mock(ServerRequest.class);
     when(taskStore.fetchTask(TASK_ID)).thenReturn(Mono.just(Task.failed()
         .withOutput(List.of(Output.of(TaskOutput.ERROR.coding(),
             StringElement.valueOf(ERROR_MSG))))
         .build()));
     when(taskStore.fetchTaskHistory(TASK_ID)).thenReturn(Flux.empty());
 
-    var result = controller.task(request, TASK_ID);
+    var result = controller.task(TASK_ID);
 
     StepVerifier.create(result)
         .assertNext(task -> assertThat(task.error()).contains(ERROR_MSG))

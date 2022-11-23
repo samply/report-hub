@@ -18,6 +18,7 @@ import de.samply.reporthub.util.Optionals;
 import de.samply.reporthub.web.model.CreateTaskFormActivityDefinition;
 import de.samply.reporthub.web.model.Link;
 import de.samply.reporthub.web.model.TaskLineItem;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,18 +50,18 @@ public class HomeController {
 
   @Bean
   public RouterFunction<ServerResponse> homeRouter() {
-    return route(GET("/"), this::handle)
-        .andRoute(POST("/create-task").and(accept(APPLICATION_FORM_URLENCODED)),
+    return route(GET(""), this::handle)
+        .andRoute(POST("create-task").and(accept(APPLICATION_FORM_URLENCODED)),
             this::createTask);
   }
 
   public Mono<ServerResponse> handle(ServerRequest request) {
     logger.debug("Request home page");
-    return homeModel(request).flatMap(model -> ok().render("home", model));
+    return homeModel().flatMap(model -> ok().render("home", model));
   }
 
-  Mono<Map<String, Object>> homeModel(ServerRequest request) {
-    return Monos.map(taskLineItems(request).collectList(),
+  Mono<Map<String, Object>> homeModel() {
+    return Monos.map(taskLineItems().collectList(),
             taskStore.listAllActivityDefinitions().collectList(), HomeController::homeModel)
         .onErrorResume(e -> Mono.just(Map.of("error", "Error while loading tasks.")));
   }
@@ -77,7 +78,7 @@ public class HomeController {
     return request.formData()
         .flatMap(this::formTask)
         .flatMap(taskStore::createTask)
-        .flatMap(task -> seeOther(request.uriBuilder().replacePath("/").build()).build());
+        .flatMap(task -> seeOther(request.uriBuilder().path("/..").build()).build());
   }
 
   Mono<Task> formTask(MultiValueMap<String, String> formData) {
@@ -91,17 +92,17 @@ public class HomeController {
         .flatMap(creator -> creator.create(activityDefinition));
   }
 
-  private Flux<TaskLineItem> taskLineItems(ServerRequest request) {
+  private Flux<TaskLineItem> taskLineItems() {
     return taskStore.listNewestTasks()
-        .flatMap(task -> Mono.justOrEmpty(taskLineItem(request, task)));
+        .flatMap(task -> Mono.justOrEmpty(taskLineItem(task)));
   }
 
-  private Optional<TaskLineItem> taskLineItem(ServerRequest request, Task task) {
+  private Optional<TaskLineItem> taskLineItem(Task task) {
     return Optionals.map(task.lastModified(),
         task.code().flatMap(code -> code.findCodeValue(TaskCode.CODE_SYSTEM_URL)),
         task.id(), task.status().value(), (lastModified, code, id, status) -> TaskLineItem.of(
             lastModified,
-            Link.of(request.uriBuilder().replacePath("/task/{code}/{id}").build(code, id), id),
+            Link.of(URI.create("/task/%s/%s".formatted(code, id)), id),
             code,
             status
         ));

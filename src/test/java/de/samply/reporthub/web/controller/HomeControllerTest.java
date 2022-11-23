@@ -7,7 +7,6 @@ import static org.springframework.http.HttpStatus.OK;
 
 import de.samply.reporthub.dktk.model.fhir.TaskCode;
 import de.samply.reporthub.model.fhir.ActivityDefinition;
-import de.samply.reporthub.model.fhir.Canonical;
 import de.samply.reporthub.model.fhir.CodeableConcept;
 import de.samply.reporthub.model.fhir.Task;
 import de.samply.reporthub.service.TaskCreator;
@@ -28,7 +27,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -40,8 +38,6 @@ class HomeControllerTest {
   private static final String TASK_ID = "id-160606";
   public static final OffsetDateTime LAST_MODIFIED = OffsetDateTime.ofInstant(Instant.EPOCH,
       ZoneOffset.UTC);
-  public static final Canonical MEASURE_URL = Canonical.valueOf(
-      "https://dktk.dkfz.de/fhir/Measure/exliquid-dashboard");
   public static final ActivityDefinition ACTIVITY_DEFINITION = ActivityDefinition.active()
       .withUrl(ACTIVITY_DEFINITION_URL)
       .build();
@@ -79,7 +75,6 @@ class HomeControllerTest {
         .withCode(CodeableConcept.coding(TaskCode.EVALUATE_MEASURE.coding()))
         .withLastModified(LAST_MODIFIED)
         .build();
-    when(request.uriBuilder()).thenAnswer(invocation -> UriComponentsBuilder.newInstance());
     when(taskStore.listAllActivityDefinitions()).thenReturn(Flux.empty());
     when(taskStore.listNewestTasks()).thenReturn(Flux.just(task));
 
