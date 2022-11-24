@@ -18,7 +18,7 @@ define retrieveCondition:
   return C.code.coding.where(system = 'http://fhir.de/CodeSystem/bfarm/icd-10-gm').code.first())
 
 define Diagnosis:
-  if (retrieveCondition is null) then 'unkown' else retrieveCondition
+  if (retrieveCondition is null) then 'unknown' else retrieveCondition
 
 define function SampleType(specimen FHIR.Specimen):
   specimen.type.coding.where(system = 'https://fhir.bbmri.de/CodeSystem/SampleMaterialType').code.first()
