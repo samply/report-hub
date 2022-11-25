@@ -13,9 +13,12 @@ define ExliquidSpecimen:
 define InInitialPopulation:
   exists ExliquidSpecimen
 
+define retrieveCondition:
+ First(from [Condition] C
+  return C.code.coding.where(system = 'http://fhir.de/CodeSystem/bfarm/icd-10-gm').code.first())
+
 define Diagnosis:
-  First(from [Condition] C
-    return C.code.coding.where(system = 'http://fhir.de/CodeSystem/dimdi/icd-10-gm').code.first())
+  if (retrieveCondition is null) then 'unknown' else retrieveCondition
 
 define function SampleType(specimen FHIR.Specimen):
   specimen.type.coding.where(system = 'https://fhir.bbmri.de/CodeSystem/SampleMaterialType').code.first()
