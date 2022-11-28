@@ -14,12 +14,14 @@ import de.samply.reporthub.model.fhir.Measure;
 import de.samply.reporthub.service.fhir.store.DataStore;
 import de.samply.reporthub.service.fhir.store.TaskStore;
 import de.samply.reporthub.util.Monos;
+import java.time.Duration;
 import java.util.Objects;
 import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 @Component
 public class EvaluateMeasure {
@@ -40,11 +42,15 @@ public class EvaluateMeasure {
     ClasspathIo.slurp("exliquid/ActivityDefinition-generate-dashboard-report.json")
         .flatMap(s -> Util.parseJson(s, ActivityDefinition.class))
         .flatMap(taskStore::createActivityDefinition)
-        .subscribe(EvaluateMeasure::logCreateActivityDefinitionSuccess);
+        .retryWhen(Retry.backoff(10, Duration.ofSeconds(1)))
+        .subscribe(EvaluateMeasure::logCreateActivityDefinitionSuccess,
+            EvaluateMeasure::logCreateActivityDefinitionError);
 
     logger.info("Ensure DataStore has Measures and Libraries...");
     Monos.flatMap(loadMeasure(), loadLibrary(), dataStore::createMeasureAndLibrary)
-        .subscribe(EvaluateMeasure::logCreateMeasureAndLibrarySuccess);
+        .retryWhen(Retry.backoff(10, Duration.ofSeconds(1)))
+        .subscribe(EvaluateMeasure::logCreateMeasureAndLibrarySuccess,
+            EvaluateMeasure::logCreateMeasureAndLibraryError);
   }
 
   private Mono<Measure> loadMeasure() {
@@ -72,6 +78,12 @@ public class EvaluateMeasure {
         activityDefinition.url().orElse("<unknown>")));
   }
 
+  private static void logCreateActivityDefinitionError(Throwable e) {
+    logger.error(
+        "Error while ensuring ActivityDefinition(s) exist: {} Please restart the ReportHub.",
+        e.getMessage());
+  }
+
   private static void logCreateMeasureAndLibrarySuccess(Bundle bundle) {
     bundle.resourcesAs(Measure.class).findFirst().ifPresentOrElse(measure ->
             logger.info("Successfully ensured Measure `%s` exists.".formatted(measure.url()
@@ -84,5 +96,11 @@ public class EvaluateMeasure {
                 .orElse("<unknown>"))),
         () -> logger.warn(
             "Missing Library in result bundle of successful Measure and Library creation."));
+  }
+
+  private static void logCreateMeasureAndLibraryError(Throwable e) {
+    logger.error(
+        "Error while ensuring Library and Measure resources exist: {} Please restart the ReportHub.",
+        e.getMessage());
   }
 }
