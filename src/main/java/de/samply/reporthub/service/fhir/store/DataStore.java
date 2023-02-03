@@ -48,9 +48,9 @@ public class DataStore implements Store {
     logger.debug("Fetch {} with id: {}", type.getSimpleName(), id);
     return client.get()
         .uri("/{type}/{id}", type.getSimpleName(), id)
-        .exchangeToMono(response -> switch (response.statusCode()) {
-          case OK -> response.bodyToMono(type);
-          case NOT_FOUND -> Mono.empty();
+        .exchangeToMono(response -> switch (response.statusCode().value()) {
+          case 200 -> response.bodyToMono(type);
+          case 404 -> Mono.empty();
           default -> response.createException().flatMap(Mono::error);
         });
   }

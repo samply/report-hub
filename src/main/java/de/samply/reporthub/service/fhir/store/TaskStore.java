@@ -58,9 +58,9 @@ public class TaskStore implements Store {
     logger.debug("Fetch {} with id: {}", type.getSimpleName(), id);
     return client.get()
         .uri("/{type}/{id}", type.getSimpleName(), id)
-        .exchangeToMono(response -> switch (response.statusCode()) {
-          case OK -> response.bodyToMono(type);
-          case NOT_FOUND -> Mono.empty();
+        .exchangeToMono(response -> switch (response.statusCode().value()) {
+          case 200 -> response.bodyToMono(type);
+          case 404 -> Mono.empty();
           default -> response.createException().flatMap(Mono::error);
         });
   }
@@ -69,9 +69,9 @@ public class TaskStore implements Store {
     logger.debug("Fetch Task with id: {}", id);
     return client.get()
         .uri("/Task/{id}", id)
-        .exchangeToMono(response -> switch (response.statusCode()) {
-          case OK -> response.bodyToMono(Task.class);
-          case NOT_FOUND -> resourceNotFound(response, "Task", id);
+        .exchangeToMono(response -> switch (response.statusCode().value()) {
+          case 200 -> response.bodyToMono(Task.class);
+          case 404 -> resourceNotFound(response, "Task", id);
           default -> response.createException().flatMap(Mono::error);
         });
   }
@@ -191,10 +191,10 @@ public class TaskStore implements Store {
         .contentType(APPLICATION_JSON)
         .header("If-None-Exist", "url=%s".formatted(url))
         .bodyValue(activityDefinition)
-        .exchangeToMono(response -> switch (response.statusCode()) {
-          case OK, CREATED -> response.bodyToMono(ActivityDefinition.class);
-          case BAD_REQUEST -> badRequest(response, "Error while creating an ActivityDefinition");
-          case NOT_FOUND -> notFound(response, "ActivityDefinition endpoint not found");
+        .exchangeToMono(response -> switch (response.statusCode().value()) {
+          case 200, 201 -> response.bodyToMono(ActivityDefinition.class);
+          case 400 -> badRequest(response, "Error while creating an ActivityDefinition");
+          case 404 -> notFound(response, "ActivityDefinition endpoint not found");
           default -> response.createException().flatMap(Mono::error);
         })
     ).orElse(Mono.error(new Exception("Missing ActivityDefinition URL")));
@@ -204,9 +204,9 @@ public class TaskStore implements Store {
     logger.debug("Fetch MeasureReport with id: {}", id);
     return client.get()
         .uri("/MeasureReport/{id}", id)
-        .exchangeToMono(response -> switch (response.statusCode()) {
-          case OK -> response.bodyToMono(MeasureReport.class);
-          case NOT_FOUND -> resourceNotFound(response, "MeasureReport", id);
+        .exchangeToMono(response -> switch (response.statusCode().value()) {
+          case 200 -> response.bodyToMono(MeasureReport.class);
+          case 404 -> resourceNotFound(response, "MeasureReport", id);
           default -> response.createException().flatMap(Mono::error);
         });
   }
@@ -216,10 +216,10 @@ public class TaskStore implements Store {
         .uri("/MeasureReport")
         .contentType(APPLICATION_JSON)
         .bodyValue(measureReport)
-        .exchangeToMono(response -> switch (response.statusCode()) {
-          case CREATED -> response.bodyToMono(MeasureReport.class);
-          case BAD_REQUEST -> badRequest(response, "Error while creating a MeasureReport");
-          case NOT_FOUND -> notFound(response, "MeasureReport endpoint not found");
+        .exchangeToMono(response -> switch (response.statusCode().value()) {
+          case 201 -> response.bodyToMono(MeasureReport.class);
+          case 400 -> badRequest(response, "Error while creating a MeasureReport");
+          case 404 -> notFound(response, "MeasureReport endpoint not found");
           default -> response.createException().flatMap(Mono::error);
         });
   }
@@ -229,12 +229,12 @@ public class TaskStore implements Store {
   }
 
   private <T extends Resource<T>> Function<ClientResponse, Flux<T>> listHandler(Class<T> type) {
-    return response -> switch (response.statusCode()) {
-      case OK -> response.bodyToFlux(Bundle.class)
+    return response -> switch (response.statusCode().value()) {
+      case 200 -> response.bodyToFlux(Bundle.class)
           .flatMapIterable(b -> b.resourcesAs(type).toList());
-      case BAD_REQUEST -> TaskStore.<T>badRequest(response,
+      case 400 -> TaskStore.<T>badRequest(response,
           "Error while listing %s".formatted(type.getSimpleName())).flux();
-      case NOT_FOUND -> TaskStore.<T>notFound(response,
+      case 404 -> TaskStore.<T>notFound(response,
           "%s endpoint not found".formatted(type.getSimpleName())).flux();
       default -> response.createException().flatMap(Mono::<T>error).flux();
     };
