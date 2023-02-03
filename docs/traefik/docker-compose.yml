@@ -19,7 +19,7 @@ services:
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock:ro
   task-store:
-    image: "samply/blaze:0.18"
+    image: "samply/blaze:0.19"
     container_name: bridgehead-task-store
     environment:
       CONTEXT_PATH: "/task-store"
@@ -32,7 +32,7 @@ services:
     - "traefik.http.routers.task_store.rule=PathPrefix(`/task-store`)"
     - "traefik.http.services.task_store.loadbalancer.server.port=8080"
   data-store:
-    image: "samply/blaze:0.18"
+    image: "samply/blaze:0.19"
     container_name: data-store
     environment:
       CONTEXT_PATH: "/data-store"
