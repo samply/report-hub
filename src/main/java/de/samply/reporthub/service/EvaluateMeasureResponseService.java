@@ -28,6 +28,7 @@ import de.samply.reporthub.model.fhir.Url;
 import de.samply.reporthub.service.fhir.messaging.MessageBroker;
 import de.samply.reporthub.service.fhir.store.TaskStore;
 import de.samply.reporthub.util.Monos;
+import jakarta.annotation.PostConstruct;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,7 +36,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

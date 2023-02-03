@@ -49,7 +49,7 @@ class ConfigConverterTest {
   void software_nameAndReleaseDate() {
     var capabilityStatement = CapabilityStatement.builder()
         .withSoftware(Software.builder(SOFTWARE_NAME)
-            .withReleaseDate(SOFTWARE_RELEASE_DATE)
+            .withReleaseDate(SOFTWARE_RELEASE_DATE.toLocalDate())
             .build())
         .build();
 
@@ -63,7 +63,7 @@ class ConfigConverterTest {
     var capabilityStatement = CapabilityStatement.builder()
         .withSoftware(Software.builder(SOFTWARE_NAME)
             .withVersion(SOFTWARE_VERSION)
-            .withReleaseDate(SOFTWARE_RELEASE_DATE)
+            .withReleaseDate(SOFTWARE_RELEASE_DATE.toLocalDate())
             .build())
         .build();
 

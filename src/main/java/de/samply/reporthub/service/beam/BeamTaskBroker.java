@@ -49,8 +49,8 @@ public class BeamTaskBroker {
             .queryParam("wait_count", "1")
             .queryParam("wait_time", "10000")
             .build())
-        .exchangeToFlux(response -> switch (response.statusCode()) {
-          case OK, PARTIAL_CONTENT -> response.bodyToFlux(BeamTask.class);
+        .exchangeToFlux(response -> switch (response.statusCode().value()) {
+          case 200, 206 -> response.bodyToFlux(BeamTask.class);
           default -> response.createException().flatMap(Mono::<BeamTask>error).flux();
         });
   }
@@ -61,9 +61,9 @@ public class BeamTaskBroker {
         .uri("/v1/tasks")
         .contentType(APPLICATION_JSON)
         .bodyValue(task)
-        .exchangeToMono(response -> switch (response.statusCode()) {
-          case CREATED, CONFLICT -> response.releaseBody();
-          case BAD_REQUEST -> response.bodyToMono(String.class)
+        .exchangeToMono(response -> switch (response.statusCode().value()) {
+          case 201, 409 -> response.releaseBody();
+          case 400 -> response.bodyToMono(String.class)
               .flatMap(msg -> Mono.error(new Exception("Error while creating task `%s`: %s"
                   .formatted(json(task), msg))));
           default -> response.createException().flatMap(Mono::error);
@@ -79,9 +79,9 @@ public class BeamTaskBroker {
         .uri("/v1/tasks/{taskId}/results/{appId}", task.id(), appId)
         .contentType(APPLICATION_JSON)
         .bodyValue(BeamResult.claimed(appId, List.of(task.from()), task.id()))
-        .exchangeToMono(response -> switch (response.statusCode()) {
-          case CREATED, NO_CONTENT -> response.releaseBody().then(Mono.empty());
-          case BAD_REQUEST -> response.bodyToMono(String.class).flatMap(msg -> {
+        .exchangeToMono(response -> switch (response.statusCode().value()) {
+          case 201, 204 -> response.releaseBody().then(Mono.empty());
+          case 400 -> response.bodyToMono(String.class).flatMap(msg -> {
             logger.error("Error while claiming the task with id `{}`: {}", task.id(), msg);
             return Mono.error(new Exception(msg));
           });
@@ -95,9 +95,9 @@ public class BeamTaskBroker {
         .uri("/v1/tasks/{taskId}/results/{appId}", result.task(), appId)
         .contentType(APPLICATION_JSON)
         .bodyValue(result)
-        .exchangeToMono(response -> switch (response.statusCode()) {
-          case CREATED, NO_CONTENT -> response.releaseBody();
-          case BAD_REQUEST -> response.bodyToMono(String.class).flatMap(msg -> {
+        .exchangeToMono(response -> switch (response.statusCode().value()) {
+          case 200, 204 -> response.releaseBody();
+          case 400 -> response.bodyToMono(String.class).flatMap(msg -> {
             logger.error("Error while answering the task with id `{}`: {}", result.task(), msg);
             return Mono.error(new Exception(msg));
           });

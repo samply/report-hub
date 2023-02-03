@@ -1,11 +1,13 @@
 package de.samply.reporthub.model.fhir;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.samply.reporthub.model.fhir.CapabilityStatement.Builder;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.Optional;
@@ -76,7 +78,8 @@ public record CapabilityStatement(
   public record Software(
       String name,
       Optional<String> version,
-      Optional<OffsetDateTime> releaseDate) implements BackboneElement {
+      @JsonFormat(pattern = "yyyy-MM-dd")
+      Optional<LocalDate> releaseDate) implements BackboneElement {
 
     public Software {
       Objects.requireNonNull(name);
@@ -92,7 +95,8 @@ public record CapabilityStatement(
 
       private String name;
       private String version;
-      private OffsetDateTime releaseDate;
+      @JsonFormat(pattern = "yyyy-MM-dd")
+      private LocalDate releaseDate;
 
       public Builder() {
       }
@@ -111,7 +115,7 @@ public record CapabilityStatement(
         return this;
       }
 
-      public Builder withReleaseDate(OffsetDateTime releaseDate) {
+      public Builder withReleaseDate(LocalDate releaseDate) {
         this.releaseDate = Objects.requireNonNull(releaseDate);
         return this;
       }
