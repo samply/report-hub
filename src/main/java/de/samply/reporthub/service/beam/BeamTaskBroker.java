@@ -47,7 +47,7 @@ public class BeamTaskBroker {
             .queryParam("to", appId)
             .queryParam("filter", "todo")
             .queryParam("wait_count", "1")
-            .queryParam("wait_time", "10000")
+            .queryParam("wait_time", "10s")
             .build())
         .exchangeToFlux(response -> switch (response.statusCode().value()) {
           case 200, 206 -> response.bodyToFlux(BeamTask.class);
