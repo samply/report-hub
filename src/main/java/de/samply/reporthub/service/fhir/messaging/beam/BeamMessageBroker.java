@@ -119,7 +119,7 @@ public class BeamMessageBroker implements MessageBroker {
   }
 
   private BeamTask task(UUID id, List<String> to, String body) {
-    return BeamTask.of(id, appId, to, 3600, body);
+    return BeamTask.of(id, appId, to, "1h", body);
   }
 
   @Override
