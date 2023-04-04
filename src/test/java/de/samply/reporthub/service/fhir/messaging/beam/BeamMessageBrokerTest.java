@@ -114,7 +114,7 @@ class BeamMessageBrokerTest {
   @Test
   void send() {
     var body = base64Encode(Objects.requireNonNull(Util.printJson(MESSAGE).block()));
-    var task = BeamTask.of(MESSAGE_ID, APP_ID, List.of(DESTINATION), 3600, body);
+    var task = BeamTask.of(MESSAGE_ID, APP_ID, List.of(DESTINATION), "1h", body);
     when(client.createTask(task)).thenReturn(Mono.empty());
 
     var result = broker.send(MESSAGE);
@@ -161,7 +161,7 @@ class BeamMessageBrokerTest {
       {"resourceType": "Bundle", "type": "message"}
       """})
   void receive_oneTaskWithInvalidBody(String decodedBody) {
-    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), 3600, base64Encode(decodedBody));
+    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), "1h", base64Encode(decodedBody));
     when(client.retrieveTasks()).thenReturn(Flux.just(task));
     when(client.claimTask(task)).thenReturn(Mono.empty());
 
@@ -175,7 +175,7 @@ class BeamMessageBrokerTest {
    */
   @Test
   void receive_oneTaskWithInvalidBodyAndClaimError() {
-    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), 3600, base64Encode("{}"));
+    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), "1h", base64Encode("{}"));
     when(client.retrieveTasks()).thenReturn(Flux.just(task));
     when(client.claimTask(task)).thenReturn(Mono.error(new Exception(ERROR_MSG)));
 
@@ -190,7 +190,7 @@ class BeamMessageBrokerTest {
    */
   @Test
   void receive_oneNonMatchingTask() {
-    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), 3600, base64Encode(VALID_TASK_BODY));
+    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), "1h", base64Encode(VALID_TASK_BODY));
     when(client.retrieveTasks()).thenReturn(Flux.just(task));
     when(client.claimTask(task)).thenReturn(Mono.empty());
 
@@ -204,7 +204,7 @@ class BeamMessageBrokerTest {
    */
   @Test
   void receive_oneNonMatchingTaskAndClaimError() {
-    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), 3600, base64Encode(VALID_TASK_BODY));
+    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), "1h", base64Encode(VALID_TASK_BODY));
     when(client.retrieveTasks()).thenReturn(Flux.just(task));
     when(client.claimTask(task)).thenReturn(Mono.error(new Exception(ERROR_MSG)));
 
@@ -215,7 +215,7 @@ class BeamMessageBrokerTest {
 
   @Test
   void receive_oneTask() {
-    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), 3600, base64Encode(VALID_TASK_BODY));
+    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), "1h", base64Encode(VALID_TASK_BODY));
     when(client.retrieveTasks()).thenReturn(Flux.just(task));
 
     var result = broker.receive(message -> true);
@@ -234,7 +234,7 @@ class BeamMessageBrokerTest {
 
   @Test
   void receive_oneTaskAndAcknowledgeIt() {
-    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), 3600, base64Encode(VALID_TASK_BODY));
+    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), "1h", base64Encode(VALID_TASK_BODY));
     when(client.retrieveTasks()).thenReturn(Flux.just(task));
     var record = broker.receive(message -> true).blockFirst();
     when(client.claimTask(task)).thenReturn(Mono.empty());
@@ -283,7 +283,7 @@ class BeamMessageBrokerTest {
       "YQo=,Error while parsing a Bundle:",
       "e30K,Error while parsing a Bundle:"})
   void parseBody_completeOnInvalid(String body, String errorMessagePrefix) {
-    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), 3600, body);
+    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), "1h", body);
 
     var result = broker.parseBody(task);
 
@@ -294,7 +294,7 @@ class BeamMessageBrokerTest {
 
   @Test
   void parseBody_success() {
-    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), 3600, base64Encode("""
+    var task = BeamTask.of(TASK_ID, APP_ID, List.of(APP_ID), "1h", base64Encode("""
         {"resourceType": "Bundle", "type": "message"}
         """));
 
